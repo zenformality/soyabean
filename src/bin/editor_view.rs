@@ -49,9 +49,13 @@ pub fn show(ui: &mut egui::Ui, ed: &mut Editor, p: &Palette, font_scale: f32) {
     let hl_word = if ed.mode == Mode::Edit { word_at_cursor(ed.buf()) } else { None };
 
     // ── mouse ─────────────────────────────────────────────────────────────
-    if ed.mode == Mode::Edit {
-        let resp = ui.interact(text_rect, id, Sense::click_and_drag());
-        let mut clicked = false;
+if ed.mode == Mode::Edit {
+            let resp = ui.interact(text_rect, id, Sense::click_and_drag());
+            // I-beam cursor when hovering the editor text area
+            if resp.hovered() {
+                ui.ctx().output_mut(|o| o.cursor_icon = egui::CursorIcon::Text);
+            }
+            let mut clicked = false;
         if resp.clicked() || resp.drag_started() {
             if let Some(pos) = resp.interact_pointer_pos() {
                 cursor_from_pos(ed, pos, text_rect, gw as f32, cw, row_h, false);
@@ -175,25 +179,26 @@ pub fn show(ui: &mut egui::Ui, ed: &mut Editor, p: &Palette, font_scale: f32) {
         painter.with_clip_rect(clip).galley(pos2(x, y_px), galley, p.syn_normal);
     }
 
-    // ── cursor ────────────────────────────────────────────────────────────
-    if ed.mode == Mode::Edit {
-        let b  = ed.buf();
-        let vc = visual_col(&b.lines[b.cy], b.cx);
-        if b.cy >= b.row_off && b.cy < b.row_off + rows
-            && vc >= col_off && vc < col_off + text_w_chars
-        {
-            let t = ui.input(|i| i.time);
-            if (t * 2.0).fract() < 0.6 {
-                let x = content_left + (vc as f32 - col_off as f32) * cw;
-                let y = text_rect.top() + (b.cy - b.row_off) as f32 * row_h;
-                painter.rect_filled(
-                    Rect::from_min_size(pos2(x, y), vec2(2.5, row_h)),
-                    Rounding::same(1.0), p.cursor_col,
-                );
+// ── cursor ────────────────────────────────────────────────────────────
+        if ed.mode == Mode::Edit {
+            let b  = ed.buf();
+            let vc = visual_col(&b.lines[b.cy], b.cx);
+            if b.cy >= b.row_off && b.cy < b.row_off + rows
+                && vc >= col_off && vc < col_off + text_w_chars
+            {
+                let t = ui.input(|i| i.time);
+                // Slower blink: ~1.2 Hz period (833ms) like VS Code
+                if (t * 1.2).fract() < 0.5 {
+                    let x = content_left + (vc as f32 - col_off as f32) * cw;
+                    let y = text_rect.top() + (b.cy - b.row_off) as f32 * row_h;
+                    painter.rect_filled(
+                        Rect::from_min_size(pos2(x, y), vec2(2.5, row_h)),
+                        Rounding::same(1.0), p.cursor_col,
+                    );
+                }
             }
         }
     }
-}
 
 fn cursor_from_pos(ed: &mut Editor, pos: Pos2, text_rect: Rect,
                    gw: f32, cw: f32, row_h: f32, sel: bool)

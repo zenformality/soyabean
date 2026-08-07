@@ -1,7 +1,7 @@
 //! Editor state machine: buffers, modes, keymap and the main event loop.
 
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use crossterm::event::{
@@ -771,6 +771,18 @@ impl Editor {
                 }
             }
             Err(e) => self.msg(format!("Can't open {}: {e}", path.display())),
+        }
+    }
+
+    /// Update paths of open buffers when a file/dir is moved (drag & drop).
+    pub fn relocate(&mut self, old: &Path, new: &Path) {
+        for b in &mut self.bufs {
+            let Some(p) = b.path.as_ref() else { continue };
+            if p == old {
+                b.path = Some(new.to_path_buf());
+            } else if let Ok(rest) = p.strip_prefix(old) {
+                b.path = Some(new.join(rest));
+            }
         }
     }
 
