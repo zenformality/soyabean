@@ -33,12 +33,17 @@ soyabean — a minimal yet powerful code IDE
     Ctrl+K            delete line
     Alt+Up/Down       move line up / down
     Tab / Shift+Tab   indent / dedent (works on selections)
+    Ctrl+/            toggle line comment (//, #, …)
+    Ctrl+Backspace / Ctrl+Delete   delete word
+    () [] {} \"\" ''   auto-close pairs; typing the closer skips over it
     Ctrl+A            select all
     Enter             newline with auto-indent
 
   NAVIGATION
     Ctrl+F            incremental search (Enter keep, Esc cancel,
                       Up/Down previous/next while open)
+    Ctrl+H            find & replace (Enter replace next,
+                      Ctrl+Enter replace all, Tab switch to replacement)
     F3 / Shift+F3     repeat search forward / backward
     Ctrl+G            go to line
     Ctrl+Left/Right   word left / right
@@ -55,6 +60,7 @@ Press Ctrl+W to close this help.";
 pub enum Mode {
     Edit,
     Find,
+    Replace,
     Goto,
     SaveAs,
     Finder,
@@ -71,6 +77,8 @@ pub struct Editor {
     pub cur: usize,
     pub mode: Mode,
     pub input: String,
+    pub replace_input: String,
+    replace_focus: bool,
     pub finder: Finder,
     pub clipboard: String,
     pub status: Option<(String, Instant)>,
@@ -106,6 +114,8 @@ impl Editor {
             cur: 0,
             mode: Mode::Edit,
             input: String::new(),
+            replace_input: String::new(),
+            replace_focus: false,
             finder: Finder::new(),
             clipboard: String::new(),
             status: None,
@@ -137,6 +147,8 @@ impl Editor {
     pub fn prompt_label(&self) -> &'static str {
         match self.mode {
             Mode::Find => " Find: ",
+            Mode::Replace if !self.replace_focus => " Find: ",
+            Mode::Replace => " Replace with: ",
             Mode::Goto => " Go to line: ",
             Mode::SaveAs => " Save as: ",
             _ => "",
@@ -212,11 +224,15 @@ impl Editor {
                 self.buf_mut().insert_text(s);
                 self.ensure_visible();
             }
-            Mode::Find | Mode::Goto | Mode::SaveAs => {
+            Mode::Find | Mode::Goto | Mode::SaveAs | Mode::Replace => {
                 let clean: String = s.chars().filter(|c| *c != '\n' && *c != '\r').collect();
-                self.input.push_str(&clean);
-                if self.mode == Mode::Find {
-                    self.live_search();
+                if self.mode == Mode::Replace && self.replace_focus {
+                    self.replace_input.push_str(&clean);
+                } else {
+                    self.input.push_str(&clean);
+                    if matches!(self.mode, Mode::Find | Mode::Replace) {
+                        self.live_search();
+                    }
                 }
             }
             Mode::Finder => {
@@ -230,7 +246,7 @@ impl Editor {
     pub fn on_key(&mut self, k: KeyEvent) {
         match self.mode {
             Mode::Edit => self.key_edit(k),
-            Mode::Find | Mode::Goto | Mode::SaveAs => self.key_prompt(k),
+            Mode::Find | Mode::Replace | Mode::Goto | Mode::SaveAs => self.key_prompt(k),
             Mode::Finder => self.key_finder(k),
         }
     }
@@ -302,6 +318,28 @@ impl Editor {
                 self.saved_view = Some((b.cy, b.cx, b.row_off, b.col_off));
                 self.input.clear();
                 self.mode = Mode::Find;
+            }
+            KeyCode::Char('h') if ctrl => {
+                let b = self.buf();
+                self.saved_view = Some((b.cy, b.cx, b.row_off, b.col_off));
+                let prefill = self.buf().selected_text().unwrap_or_default();
+                self.input = prefill;
+                if !self.input.is_empty() {
+                    self.last_search = self.input.clone();
+                }
+                self.replace_input.clear();
+                self.replace_focus = false;
+                self.mode = Mode::Replace;
+                if !self.input.is_empty() {
+                    self.live_search();
+                }
+            }
+            KeyCode::Char('/') if ctrl => {
+                if !self.buf_mut().toggle_comment() {
+                    let lang = self.buf().lang.name;
+                    self.msg(format!("No line comments for {}", lang));
+                }
+                self.ensure_visible();
             }
             KeyCode::Char('g') if ctrl => {
                 self.input.clear();
@@ -379,6 +417,8 @@ impl Editor {
 
             // --- editing ---
             KeyCode::Enter => { self.buf_mut().insert_newline(); self.ensure_visible(); }
+            KeyCode::Backspace if ctrl => { self.buf_mut().delete_word_back(); self.ensure_visible(); }
+            KeyCode::Delete if ctrl => { self.buf_mut().delete_word_fwd(); self.ensure_visible(); }
             KeyCode::Backspace => { self.buf_mut().backspace(); self.ensure_visible(); }
             KeyCode::Delete => { self.buf_mut().delete_forward(); self.ensure_visible(); }
             KeyCode::Tab => { self.buf_mut().insert_tab(); self.ensure_visible(); }
@@ -395,9 +435,11 @@ impl Editor {
 
     fn key_prompt(&mut self, k: KeyEvent) {
         let ctrl = k.modifiers.contains(KeyModifiers::CONTROL);
+        let shift = k.modifiers.contains(KeyModifiers::SHIFT);
+        let is_find = matches!(self.mode, Mode::Find | Mode::Replace);
         match k.code {
             KeyCode::Esc => {
-                if self.mode == Mode::Find {
+                if is_find {
                     if let Some((cy, cx, ro, co)) = self.saved_view.take() {
                         let b = self.buf_mut();
                         b.set_cursor(cy, cx, false);
@@ -408,6 +450,18 @@ impl Editor {
                 }
                 self.mode = Mode::Edit;
                 self.input.clear();
+                self.replace_input.clear();
+                self.replace_focus = false;
+            }
+            KeyCode::Enter if ctrl => {
+                if self.mode == Mode::Replace {
+                    self.replace_all();
+                    self.saved_view = None;
+                    self.mode = Mode::Edit;
+                    self.input.clear();
+                    self.replace_input.clear();
+                    self.replace_focus = false;
+                }
             }
             KeyCode::Enter => {
                 let input = self.input.clone();
@@ -417,6 +471,11 @@ impl Editor {
                             self.last_search = input;
                         }
                         self.saved_view = None;
+                        self.mode = Mode::Edit;
+                        self.input.clear();
+                    }
+                    Mode::Replace => {
+                        self.replace_current();
                     }
                     Mode::Goto => {
                         if let Ok(n) = input.trim().parse::<usize>() {
@@ -427,6 +486,8 @@ impl Editor {
                         } else if !input.trim().is_empty() {
                             self.msg("Not a line number");
                         }
+                        self.mode = Mode::Edit;
+                        self.input.clear();
                     }
                     Mode::SaveAs => {
                         let t = input.trim();
@@ -442,35 +503,54 @@ impl Editor {
                             self.save_current();
                             return;
                         }
+                        self.mode = Mode::Edit;
+                        self.input.clear();
                     }
                     _ => {}
                 }
-                self.mode = Mode::Edit;
-                self.input.clear();
+            }
+            KeyCode::Tab if self.mode == Mode::Replace => {
+                self.replace_focus = !self.replace_focus;
+            }
+            KeyCode::F(3) if is_find => {
+                self.repeat_search(!shift);
+                self.ensure_visible();
             }
             KeyCode::Backspace => {
-                self.input.pop();
-                if self.mode == Mode::Find {
-                    self.live_search();
+                if self.mode == Mode::Replace && self.replace_focus {
+                    self.replace_input.pop();
+                } else {
+                    self.input.pop();
+                    if is_find {
+                        self.live_search();
+                    }
                 }
             }
-            KeyCode::Down if self.mode == Mode::Find => self.search_step(true),
-            KeyCode::Up if self.mode == Mode::Find => self.search_step(false),
+            KeyCode::Down if is_find => self.search_step(true),
+            KeyCode::Up if is_find => self.search_step(false),
             KeyCode::Char('v') if ctrl => {
                 let text: String = self
                     .clipboard
                     .chars()
                     .filter(|c| *c != '\n' && *c != '\r')
                     .collect();
-                self.input.push_str(&text);
-                if self.mode == Mode::Find {
-                    self.live_search();
+                if self.mode == Mode::Replace && self.replace_focus {
+                    self.replace_input.push_str(&text);
+                } else {
+                    self.input.push_str(&text);
+                    if is_find {
+                        self.live_search();
+                    }
                 }
             }
             KeyCode::Char(c) if !ctrl => {
-                self.input.push(c);
-                if self.mode == Mode::Find {
-                    self.live_search();
+                if self.mode == Mode::Replace && self.replace_focus {
+                    self.replace_input.push(c);
+                } else {
+                    self.input.push(c);
+                    if is_find {
+                        self.live_search();
+                    }
                 }
             }
             _ => {}
@@ -519,6 +599,95 @@ impl Editor {
             (b.cy, b.cx.saturating_sub(qlen))
         };
         self.apply_match(&q, from, forward);
+    }
+
+    // ---- find / replace public API (used by the GUI overlays) ------------
+
+    pub fn find_query(&self) -> &str {
+        &self.input
+    }
+
+    pub fn replace_query(&self) -> &str {
+        &self.replace_input
+    }
+
+    pub fn set_find_query(&mut self, q: &str) {
+        self.input = q.to_string();
+        if !self.input.is_empty() {
+            self.last_search = self.input.clone();
+        }
+        self.live_search();
+    }
+
+    pub fn set_replace_query(&mut self, q: &str) {
+        self.replace_input = q.to_string();
+    }
+
+    pub fn search_next(&mut self) {
+        self.repeat_search(true);
+    }
+
+    pub fn search_prev(&mut self) {
+        self.repeat_search(false);
+    }
+
+    pub fn find_next_step(&mut self) {
+        self.search_step(true);
+    }
+
+    pub fn find_prev_step(&mut self) {
+        self.search_step(false);
+    }
+
+    /// Replace the currently selected match (if it matches the query), then
+    /// jump to the next one. If the cursor isn't on a match, just advances.
+    pub fn replace_current(&mut self) {
+        let q = self.input.clone();
+        if q.is_empty() {
+            self.msg("Nothing to replace");
+            return;
+        }
+        let rep = self.replace_input.clone();
+        let ci = !q.chars().any(|c| c.is_uppercase());
+        let is_match = match self.buf().selected_text() {
+            Some(s) => {
+                if ci {
+                    s.eq_ignore_ascii_case(&q)
+                } else {
+                    s == q
+                }
+            }
+            None => false,
+        };
+        if is_match {
+            self.buf_mut().delete_selection();
+            self.buf_mut().insert_text(&rep);
+            self.ensure_visible();
+            let from = (self.buf().cy, self.buf().cx);
+            self.apply_match(&q, from, true);
+            self.msg("Replaced — F3 / Enter for next");
+        } else {
+            let b = self.buf();
+            let from = (b.cy, b.cx);
+            self.apply_match(&q, from, true);
+        }
+    }
+
+    /// Replace every match of the current query, as one undo step.
+    pub fn replace_all(&mut self) {
+        let q = self.input.clone();
+        if q.is_empty() {
+            self.msg("Nothing to replace");
+            return;
+        }
+        let rep = self.replace_input.clone();
+        let n = self.buf_mut().replace_all(&q, &rep);
+        if n == 0 {
+            self.msg(format!("No matches: {q}"));
+        } else {
+            self.msg(format!("Replaced {n} occurrence(s)"));
+        }
+        self.ensure_visible();
     }
 
     fn apply_match(&mut self, q: &str, from: (usize, usize), forward: bool) {

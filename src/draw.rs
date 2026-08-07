@@ -106,7 +106,7 @@ pub fn render(ed: &mut Editor, out: &mut impl Write) -> io::Result<()> {
             let col = 4 + UnicodeWidthStr::width(ed.finder.query.as_str());
             queue!(out, MoveTo(col.min(w - 1) as u16, 0), Show)?;
         }
-        Mode::Find | Mode::Goto | Mode::SaveAs => {
+        Mode::Find | Mode::Replace | Mode::Goto | Mode::SaveAs => {
             let label = ed.prompt_label();
             let col = UnicodeWidthStr::width(label) + UnicodeWidthStr::width(ed.input.as_str());
             queue!(out, MoveTo(col.min(w - 1) as u16, (h - 1) as u16), Show)?;

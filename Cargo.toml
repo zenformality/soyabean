@@ -10,6 +10,7 @@ crossterm = { version = "0.28", features = ["bracketed-paste"] }
 unicode-width = "0.2"
 eframe = "0.29"
 image = { version = "0.25", default-features = false, features = ["png"] }
+portable-pty = "0.9"
 
 [[bin]]
 name = "soyabean"

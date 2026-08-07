@@ -539,9 +539,40 @@ impl Buffer {
     pub fn insert_char(&mut self, c: char) {
         self.push_undo(EditKind::Insert);
         self.delete_sel_raw();
-        let bi = bidx(&self.lines[self.cy], self.cx);
-        self.lines[self.cy].insert(bi, c);
-        self.cx += 1;
+        let chars: Vec<char> = self.lines[self.cy].chars().collect();
+        let at = self.cx;
+        // Typing a closing char directly after its opener skips over it.
+        if matches!(c, ')' | ']' | '}' | '"' | '\'' | '`') && chars.get(at) == Some(&c) {
+            self.cx += 1;
+            self.goal = self.cx;
+            return;
+        }
+        let closing = match c {
+            '(' => Some(')'),
+            '[' => Some(']'),
+            '{' => Some('}'),
+            '"' | '\'' | '`' => Some(c),
+            _ => None,
+        };
+        // Quotes don't auto-close right after a word char (apostrophes, prose).
+        let quote = matches!(c, '"' | '\'' | '`');
+        if quote && at > 0 && chars[at - 1].is_alphanumeric() {
+            let bi = bidx(&self.lines[self.cy], at);
+            self.lines[self.cy].insert(bi, c);
+            self.cx += 1;
+            self.goal = self.cx;
+            return;
+        }
+        let bi = bidx(&self.lines[self.cy], at);
+        if let Some(cl) = closing {
+            self.lines[self.cy].insert(bi, c);
+            let bi2 = bidx(&self.lines[self.cy], at + 1);
+            self.lines[self.cy].insert(bi2, cl);
+            self.cx += 1;
+        } else {
+            self.lines[self.cy].insert(bi, c);
+            self.cx += 1;
+        }
         self.goal = self.cx;
     }
 
@@ -741,6 +772,216 @@ impl Buffer {
         self.cy = other;
     }
 
+    // ---- word delete ----------------------------------------------------
+
+    pub fn delete_word_back(&mut self) {
+        if self.sel_range().is_some() {
+            self.delete_selection();
+            return;
+        }
+        self.anchor = None;
+        if self.cx == 0 {
+            if self.cy > 0 {
+                self.push_undo(EditKind::Delete);
+                let cur = self.lines.remove(self.cy);
+                self.cy -= 1;
+                self.cx = charlen(&self.lines[self.cy]);
+                self.lines[self.cy].push_str(&cur);
+            }
+            self.goal = self.cx;
+            return;
+        }
+        let chars: Vec<char> = self.lines[self.cy].chars().collect();
+        let mut i = self.cx;
+        while i > 0 && chars[i - 1].is_whitespace() {
+            i -= 1;
+        }
+        if i > 0 {
+            if is_word(chars[i - 1]) {
+                while i > 0 && is_word(chars[i - 1]) {
+                    i -= 1;
+                }
+            } else {
+                while i > 0 && !is_word(chars[i - 1]) && !chars[i - 1].is_whitespace() {
+                    i -= 1;
+                }
+            }
+        }
+        self.push_undo(EditKind::Delete);
+        let b0 = bidx(&self.lines[self.cy], i);
+        let b1 = bidx(&self.lines[self.cy], self.cx);
+        self.lines[self.cy].replace_range(b0..b1, "");
+        self.cx = i;
+        self.goal = self.cx;
+    }
+
+    pub fn delete_word_fwd(&mut self) {
+        if self.sel_range().is_some() {
+            self.delete_selection();
+            return;
+        }
+        self.anchor = None;
+        let chars: Vec<char> = self.lines[self.cy].chars().collect();
+        let n = chars.len();
+        if self.cx >= n {
+            if self.cy + 1 < self.lines.len() {
+                self.push_undo(EditKind::Delete);
+                let next = self.lines.remove(self.cy + 1);
+                self.lines[self.cy].push_str(&next);
+            }
+            return;
+        }
+        let mut i = self.cx;
+        while i < n && chars[i].is_whitespace() {
+            i += 1;
+        }
+        if i < n {
+            if is_word(chars[i]) {
+                while i < n && is_word(chars[i]) {
+                    i += 1;
+                }
+            } else {
+                while i < n && !is_word(chars[i]) && !chars[i].is_whitespace() {
+                    i += 1;
+                }
+            }
+        }
+        self.push_undo(EditKind::Delete);
+        let b0 = bidx(&self.lines[self.cy], self.cx);
+        let b1 = bidx(&self.lines[self.cy], i);
+        self.lines[self.cy].replace_range(b0..b1, "");
+    }
+
+    // ---- comments -------------------------------------------------------
+
+    /// Toggle `//`, `#`, … line comments on the current line or selection.
+    /// Returns false when this language has no line-comment prefix.
+    pub fn toggle_comment(&mut self) -> bool {
+        let prefix = self.lang.line_comment;
+        if prefix.is_empty() {
+            return false;
+        }
+        let (sy, ey) = match self.sel_range() {
+            Some(((sy, _), (ey, ex))) => (sy, if ex == 0 && ey > sy { ey - 1 } else { ey }),
+            None => (self.cy, self.cy),
+        };
+        let all_commented = (sy..=ey).all(|y| {
+            let t = self.lines[y].trim_start();
+            t.is_empty() || t.starts_with(prefix)
+        });
+        let plen = prefix.chars().count();
+        self.push_undo(EditKind::Other);
+        for y in sy..=ey {
+            let lead = self.lines[y].len() - self.lines[y].trim_start().len();
+            if all_commented {
+                let t = &self.lines[y][lead..];
+                if let Some(mut rest) = t.strip_prefix(prefix) {
+                    let dropped = rest.starts_with(' ');
+                    if dropped {
+                        rest = &rest[1..];
+                    }
+                    let mut s = self.lines[y][..lead].to_string();
+                    s.push_str(rest);
+                    self.lines[y] = s;
+                    let removed = plen + if dropped { 1 } else { 0 };
+                    if y == self.cy && self.cx >= lead {
+                        self.cx = self.cx.saturating_sub(removed);
+                    }
+                    if let Some((ay, ax)) = self.anchor {
+                        if ay == y && ax >= lead {
+                            self.anchor = Some((ay, ax.saturating_sub(removed)));
+                        }
+                    }
+                }
+            } else if !self.lines[y].trim_start().is_empty() {
+                self.lines[y].insert_str(lead, prefix);
+                let after = &self.lines[y][lead + plen..];
+                if !after.starts_with(' ') {
+                    self.lines[y].insert_str(lead + plen, " ");
+                }
+                let added = plen + 1;
+                if y == self.cy && self.cx >= lead {
+                    self.cx += added;
+                }
+                if let Some((ay, ax)) = self.anchor {
+                    if ay == y && ax >= lead {
+                        self.anchor = Some((ay, ax + added));
+                    }
+                }
+            }
+        }
+        self.cx = self.cx.min(charlen(&self.lines[self.cy]));
+        self.goal = self.cx;
+        true
+    }
+
+    // ---- replace --------------------------------------------------------
+
+    /// Replace every (smart-case) match of `q` with `rep` as one undo step.
+    pub fn replace_all(&mut self, q: &str, rep: &str) -> usize {
+        if q.is_empty() {
+            return 0;
+        }
+        let ci = !q.chars().any(|c| c.is_uppercase());
+        let qn = if ci { q.to_lowercase() } else { q.to_string() };
+
+        // First pass: collect edits so the whole operation is a single undo.
+        let mut edits: Vec<(usize, Vec<(usize, usize)>)> = Vec::new();
+        for (y, line) in self.lines.iter().enumerate() {
+            let hay = if ci { line.to_lowercase() } else { line.to_string() };
+            let mut ranges = Vec::new();
+            let mut from = 0usize;
+            while let Some(rel) = hay[from..].find(&qn) {
+                let b = from + rel;
+                let e = b + qn.len();
+                ranges.push((b, e));
+                from = e;
+            }
+            if !ranges.is_empty() {
+                edits.push((y, ranges));
+            }
+        }
+        let count: usize = edits.iter().map(|(_, r)| r.len()).sum();
+        if count == 0 {
+            return 0;
+        }
+        self.push_undo(EditKind::Other);
+        for (y, ranges) in edits {
+            let line = &self.lines[y];
+            let mut new = String::with_capacity(line.len());
+            let mut last = 0usize;
+            for (b, e) in ranges {
+                new.push_str(&line[last..b]);
+                new.push_str(rep);
+                last = e;
+            }
+            new.push_str(&line[last..]);
+            self.lines[y] = new;
+        }
+        self.dirty = true;
+        self.syntax_dirty = true;
+        count
+    }
+
+    /// Number of (smart-case) matches of `q` across the whole buffer.
+    pub fn count_matches(&self, q: &str) -> usize {
+        if q.is_empty() {
+            return 0;
+        }
+        let ci = !q.chars().any(|c| c.is_uppercase());
+        let qn = if ci { q.to_lowercase() } else { q.to_string() };
+        let mut total = 0usize;
+        for line in &self.lines {
+            let hay = if ci { line.to_lowercase() } else { line.to_string() };
+            let mut from = 0usize;
+            while let Some(rel) = hay[from..].find(&qn) {
+                total += 1;
+                from += rel + qn.len();
+            }
+        }
+        total
+    }
+
     // ---- search ---------------------------------------------------------
 
     /// Find `q` starting from `(from.0, from.1)`; wraps around. Returns
@@ -908,6 +1149,67 @@ mod tests {
         assert_eq!(b.lines, vec!["    a", "    b"]);
         b.indent_lines(false);
         assert_eq!(b.lines, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn auto_close_pairs_and_skip_over() {
+        let mut b = buf("ab");
+        b.set_cursor(0, 1, false);
+        b.insert_char('(');
+        assert_eq!(b.lines[0], "a()b"); // auto-closed
+        assert_eq!(b.cx, 2);            // cursor between the parens
+        b.insert_char(')');
+        assert_eq!(b.lines[0], "a()b"); // skipped over the auto-closed ')'
+        assert_eq!(b.cx, 3);
+        b.insert_char('"');
+        assert_eq!(b.lines[0], "a()\"\"b");
+        assert_eq!(b.cx, 4);
+        b.insert_char('"');
+        assert_eq!(b.lines[0], "a()\"\"b");
+        assert_eq!(b.cx, 5);
+        // Quote after a word char does not auto-close (apostrophes).
+        let mut b = buf("don");
+        b.set_cursor(0, 3, false);
+        b.insert_char('\'');
+        assert_eq!(b.lines[0], "don'");
+    }
+
+    #[test]
+    fn delete_word_back_and_fwd() {
+        let mut b = buf("one two three");
+        b.set_cursor(0, 8, false); // start of "three"
+        b.delete_word_back();
+        assert_eq!(b.lines[0], "one three");
+        b.set_cursor(0, 4, false); // "t" of three
+        b.delete_word_fwd();
+        assert_eq!(b.lines[0], "one ");
+    }
+
+    #[test]
+    fn toggle_line_comment() {
+        let mut b = buf("    let x = 1;");
+        b.lang = crate::syntax::detect(std::path::Path::new("a.rs"));
+        b.toggle_comment();
+        assert_eq!(b.lines[0], "    // let x = 1;");
+        b.toggle_comment();
+        assert_eq!(b.lines[0], "    let x = 1;");
+        // No line comments for plain text -> false.
+        let mut b = buf("hello");
+        b.lang = &crate::syntax::PLAIN;
+        assert!(!b.toggle_comment());
+    }
+
+    #[test]
+    fn replace_all_and_count() {
+        let mut b = buf("Foo foo bar\nfoo");
+        assert_eq!(b.count_matches("foo"), 3); // smart-case matches Foo too
+        let n = b.replace_all("foo", "baz");
+        assert_eq!(n, 3);
+        assert_eq!(b.lines, vec!["baz baz bar".to_string(), "baz".to_string()]);
+        // exact-case when query has uppercase
+        let mut b = buf("Foo foo");
+        assert_eq!(b.replace_all("Foo", "x"), 1);
+        assert_eq!(b.lines, vec!["x foo"]);
     }
 
     #[test]
