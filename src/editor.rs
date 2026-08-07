@@ -111,7 +111,7 @@ impl Editor {
             status: None,
             last_search: String::new(),
             root,
-            size: terminal::size()?,
+            size: terminal::size().unwrap_or((120, 30)),
             pending: None,
             saved_view: None,
             quit: false,
@@ -148,7 +148,7 @@ impl Editor {
         digits.max(3) + 1
     }
 
-    fn text_h(&self) -> usize {
+    pub fn text_h(&self) -> usize {
         (self.size.1 as usize).saturating_sub(2).max(1)
     }
 
@@ -165,7 +165,7 @@ impl Editor {
         }
     }
 
-    fn ensure_visible(&mut self) {
+    pub fn ensure_visible(&mut self) {
         let text_h = self.text_h();
         let text_w = self.text_w();
         let b = self.buf_mut();
@@ -206,7 +206,7 @@ impl Editor {
         }
     }
 
-    fn on_paste(&mut self, s: &str) {
+    pub fn on_paste(&mut self, s: &str) {
         match self.mode {
             Mode::Edit => {
                 self.buf_mut().insert_text(s);
@@ -227,7 +227,7 @@ impl Editor {
         }
     }
 
-    fn on_key(&mut self, k: KeyEvent) {
+    pub fn on_key(&mut self, k: KeyEvent) {
         match self.mode {
             Mode::Edit => self.key_edit(k),
             Mode::Find | Mode::Goto | Mode::SaveAs => self.key_prompt(k),
@@ -326,8 +326,12 @@ impl Editor {
                 self.ensure_visible();
             }
             KeyCode::Char('a') if ctrl => self.buf_mut().select_all(),
-            KeyCode::Char('c') if ctrl => self.copy(false),
-            KeyCode::Char('x') if ctrl => self.copy(true),
+            KeyCode::Char('c') if ctrl => {
+                self.copy(false);
+            }
+            KeyCode::Char('x') if ctrl => {
+                self.copy(true);
+            }
             KeyCode::Char('v') if ctrl => {
                 let text = self.clipboard.clone();
                 if text.is_empty() {
@@ -576,7 +580,7 @@ impl Editor {
         }
     }
 
-    fn open_file(&mut self, path: PathBuf) {
+    pub fn open_file(&mut self, path: PathBuf) {
         // Already open? Just switch.
         if let Some(i) = self.bufs.iter().position(|b| b.path.as_ref() == Some(&path)) {
             self.cur = i;
@@ -625,7 +629,7 @@ impl Editor {
         }
     }
 
-    fn copy(&mut self, cut: bool) {
+    pub fn copy(&mut self, cut: bool) -> String {
         let text = match self.buf().selected_text() {
             Some(t) => t,
             None => self.buf().cur_line().to_string() + "\n",
@@ -643,6 +647,19 @@ impl Editor {
         } else {
             self.msg(format!("Copied {} chars", text.chars().count()));
         }
+        text
+    }
+
+    pub fn clipboard_text(&self) -> &str {
+        &self.clipboard
+    }
+
+    /// Keep the GUI's text area size in sync so scroll/page/finder math matches.
+    pub fn set_size(&mut self, w: usize, h: usize) {
+        self.size = (
+            w.min(u16::MAX as usize) as u16,
+            h.min(u16::MAX as usize) as u16,
+        );
     }
 
     // ---- mouse ----------------------------------------------------------

@@ -1,12 +1,8 @@
 //! soyabean — a minimal yet powerful terminal code IDE.
 
-mod buffer;
-mod draw;
-mod editor;
-mod finder;
-mod syntax;
-
 use std::io;
+
+use soyabean::editor;
 
 use crossterm::cursor::Show;
 use crossterm::event::{

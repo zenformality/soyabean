@@ -3,10 +3,21 @@ name = "soyabean"
 version = "0.1.0"
 edition = "2021"
 description = "A minimal yet powerful terminal code IDE"
+autobins = false
 
 [dependencies]
 crossterm = { version = "0.28", features = ["bracketed-paste"] }
 unicode-width = "0.2"
+eframe = "0.29"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[[bin]]
+name = "soyabean"
+path = "src/main.rs"
+
+[[bin]]
+name = "soyabean_gui"
+path = "src/bin/soyabean_gui.rs"
 
 [profile.release]
 lto = true
