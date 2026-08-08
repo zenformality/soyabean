@@ -130,7 +130,11 @@ impl Buffer {
         let mut b = Self::base();
         b.is_scratch = true;
         b.scratch_name = name.to_string();
-        b.lines = text.replace('\r', "").split('\n').map(String::from).collect();
+        b.lines = text
+            .replace('\r', "")
+            .split('\n')
+            .map(String::from)
+            .collect();
         if b.lines.is_empty() {
             b.lines.push(String::new());
         }
@@ -144,15 +148,15 @@ impl Buffer {
         match fs::read(&path) {
             Ok(bytes) => {
                 if bytes.contains(&0) {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "binary file",
-                    ));
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "binary file"));
                 }
                 let text = String::from_utf8_lossy(&bytes);
                 b.crlf = text.contains("\r\n");
-                let mut lines: Vec<String> =
-                    text.replace('\r', "").split('\n').map(String::from).collect();
+                let mut lines: Vec<String> = text
+                    .replace('\r', "")
+                    .split('\n')
+                    .map(String::from)
+                    .collect();
                 if lines.len() > 1 && lines.last().is_some_and(|l| l.is_empty()) {
                     lines.pop();
                 }
@@ -411,8 +415,7 @@ impl Buffer {
     pub fn home(&mut self, sel: bool) {
         self.begin_move(sel);
         // Smart home: toggle between first non-blank char and column 0.
-        let first = self
-            .lines[self.cy]
+        let first = self.lines[self.cy]
             .chars()
             .position(|c| !c.is_whitespace())
             .unwrap_or(0);
@@ -670,7 +673,11 @@ impl Buffer {
             // Whitespace-only prefix: delete back to the previous tab stop.
             let n = if !before.is_empty() && before.chars().all(|c| c == ' ') {
                 let r = self.cx % TAB_STOP;
-                if r == 0 { TAB_STOP } else { r }
+                if r == 0 {
+                    TAB_STOP
+                } else {
+                    r
+                }
             } else {
                 1
             };
@@ -726,8 +733,10 @@ impl Buffer {
             self.lines[self.cy].truncate(bi);
             self.lines[self.cy].push_str(parts[0]);
             let last = parts[parts.len() - 1];
-            let mut new_lines: Vec<String> =
-                parts[1..parts.len() - 1].iter().map(|s| s.to_string()).collect();
+            let mut new_lines: Vec<String> = parts[1..parts.len() - 1]
+                .iter()
+                .map(|s| s.to_string())
+                .collect();
             new_lines.push(last.to_string() + &tail);
             let at = self.cy + 1;
             self.lines.splice(at..at, new_lines);
@@ -928,7 +937,11 @@ impl Buffer {
         // First pass: collect edits so the whole operation is a single undo.
         let mut edits: Vec<(usize, Vec<(usize, usize)>)> = Vec::new();
         for (y, line) in self.lines.iter().enumerate() {
-            let hay = if ci { line.to_lowercase() } else { line.to_string() };
+            let hay = if ci {
+                line.to_lowercase()
+            } else {
+                line.to_string()
+            };
             let mut ranges = Vec::new();
             let mut from = 0usize;
             while let Some(rel) = hay[from..].find(&qn) {
@@ -972,7 +985,11 @@ impl Buffer {
         let qn = if ci { q.to_lowercase() } else { q.to_string() };
         let mut total = 0usize;
         for line in &self.lines {
-            let hay = if ci { line.to_lowercase() } else { line.to_string() };
+            let hay = if ci {
+                line.to_lowercase()
+            } else {
+                line.to_string()
+            };
             let mut from = 0usize;
             while let Some(rel) = hay[from..].find(&qn) {
                 total += 1;
@@ -987,7 +1004,12 @@ impl Buffer {
     /// Find `q` starting from `(from.0, from.1)`; wraps around. Returns
     /// (line, char-start, char-len). Case-insensitive unless the query has
     /// uppercase letters (smart case).
-    pub fn find(&self, q: &str, from: (usize, usize), forward: bool) -> Option<(usize, usize, usize)> {
+    pub fn find(
+        &self,
+        q: &str,
+        from: (usize, usize),
+        forward: bool,
+    ) -> Option<(usize, usize, usize)> {
         if q.is_empty() {
             return None;
         }
@@ -1157,7 +1179,7 @@ mod tests {
         b.set_cursor(0, 1, false);
         b.insert_char('(');
         assert_eq!(b.lines[0], "a()b"); // auto-closed
-        assert_eq!(b.cx, 2);            // cursor between the parens
+        assert_eq!(b.cx, 2); // cursor between the parens
         b.insert_char(')');
         assert_eq!(b.lines[0], "a()b"); // skipped over the auto-closed ')'
         assert_eq!(b.cx, 3);

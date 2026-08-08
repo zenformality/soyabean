@@ -16,13 +16,27 @@ use super::theme::Palette;
 pub fn is_image_path(path: &Path) -> bool {
     matches!(
         ext(path).as_str(),
-        "png" | "jpg" | "jpeg" | "gif" | "bmp" | "webp" | "ico" | "tiff" | "tif" | "pbm"
-            | "pgm" | "ppm" | "pnm"
+        "png"
+            | "jpg"
+            | "jpeg"
+            | "gif"
+            | "bmp"
+            | "webp"
+            | "ico"
+            | "tiff"
+            | "tif"
+            | "pbm"
+            | "pgm"
+            | "ppm"
+            | "pnm"
     )
 }
 
 pub fn is_audio_path(path: &Path) -> bool {
-    matches!(ext(path).as_str(), "mp3" | "wav" | "ogg" | "flac" | "m4a" | "aac" | "aiff" | "opus")
+    matches!(
+        ext(path).as_str(),
+        "mp3" | "wav" | "ogg" | "flac" | "m4a" | "aac" | "aiff" | "opus"
+    )
 }
 
 pub fn is_media_path(path: &Path) -> bool {
@@ -42,18 +56,15 @@ pub type ImgCache = HashMap<PathBuf, (std::time::SystemTime, egui::TextureHandle
 
 /// Draw a preview of `path` scaled to fit the available space. Returns false
 /// (and shows an error) if the image cannot be decoded.
-pub fn show_image(
-    ui: &mut egui::Ui,
-    path: &Path,
-    p: &Palette,
-    cache: &mut ImgCache,
-) -> bool {
+pub fn show_image(ui: &mut egui::Ui, path: &Path, p: &Palette, cache: &mut ImgCache) -> bool {
     let avail = ui.available_size();
     let (rect, _) = ui.allocate_exact_size(avail, egui::Sense::hover());
     let painter = ui.painter_at(rect);
 
     // Header: file name + dimensions
-    let modified = std::fs::metadata(path).and_then(|m| m.modified()).unwrap_or(std::time::SystemTime::UNIX_EPOCH);
+    let modified = std::fs::metadata(path)
+        .and_then(|m| m.modified())
+        .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
     let tex = match cache.get(path) {
         Some((m, t)) if *m == modified => t.clone(),
         _ => {
@@ -66,9 +77,11 @@ pub fn show_image(
                 Err(e) => {
                     painter.rect_filled(rect, 0.0, p.bg);
                     painter.text(
-                        rect.center(), egui::Align2::CENTER_CENTER,
+                        rect.center(),
+                        egui::Align2::CENTER_CENTER,
                         format!("Cannot preview image: {e}"),
-                        FontId::proportional(14.0), p.text_dim,
+                        FontId::proportional(14.0),
+                        p.text_dim,
                     );
                     return false;
                 }
@@ -92,11 +105,16 @@ pub fn show_image(
         });
     });
 
-    let name = path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+    let name = path
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
     painter.text(
-        rect.left_top() + Vec2::new(8.0, 6.0), egui::Align2::LEFT_TOP,
+        rect.left_top() + Vec2::new(8.0, 6.0),
+        egui::Align2::LEFT_TOP,
         format!("{name}  ·  {tw:.0}×{th:.0}"),
-        FontId::proportional(12.0), p.text_dim,
+        FontId::proportional(12.0),
+        p.text_dim,
     );
     true
 }
@@ -105,15 +123,9 @@ fn load_texture(ctx: &egui::Context, path: &Path) -> Result<egui::TextureHandle,
     let img = image::open(path).map_err(|e| e.to_string())?;
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();
-    let color_img = egui::ColorImage::from_rgba_unmultiplied(
-        [w as usize, h as usize],
-        &rgba.into_raw(),
-    );
-    Ok(ctx.load_texture(
-        "media-preview",
-        color_img,
-        egui::TextureOptions::LINEAR,
-    ))
+    let color_img =
+        egui::ColorImage::from_rgba_unmultiplied([w as usize, h as usize], &rgba.into_raw());
+    Ok(ctx.load_texture("media-preview", color_img, egui::TextureOptions::LINEAR))
 }
 
 // ── audio player ──────────────────────────────────────────────────────────────
@@ -138,7 +150,9 @@ impl AudioPlayer {
     }
 
     pub fn is_playing(&self) -> bool {
-        self.sink.as_ref().map_or(false, |s| !s.empty() && !s.is_paused())
+        self.sink
+            .as_ref()
+            .map_or(false, |s| !s.empty() && !s.is_paused())
     }
 
     fn ensure_loaded(&mut self, path: &Path) -> bool {
@@ -159,8 +173,12 @@ impl AudioPlayer {
             Some(h) => h.clone(),
             None => return false,
         };
-        let Ok(file) = File::open(path) else { return false };
-        let Ok(decoder) = Decoder::new(BufReader::new(file)) else { return false };
+        let Ok(file) = File::open(path) else {
+            return false;
+        };
+        let Ok(decoder) = Decoder::new(BufReader::new(file)) else {
+            return false;
+        };
         match Sink::try_new(&handle) {
             Ok(sink) => {
                 sink.set_volume(self.volume);
@@ -210,13 +228,20 @@ pub fn show_audio(ui: &mut egui::Ui, path: &Path, p: &Palette, player: &mut Audi
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 0.0, p.bg);
 
-    let name = path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+    let name = path
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
 
     let card_w = 420.0;
     let card_h = 160.0;
     let card = egui::Rect::from_center_size(rect.center(), Vec2::new(card_w, card_h));
     painter.rect_filled(card, Rounding::same(10.0), p.sidebar_bg);
-    painter.rect_stroke(card, Rounding::same(10.0), egui::Stroke::new(1.0_f32, p.border));
+    painter.rect_stroke(
+        card,
+        Rounding::same(10.0),
+        egui::Stroke::new(1.0_f32, p.border),
+    );
 
     let playing = player.is_playing();
     ui.allocate_new_ui(UiBuilder::new().max_rect(card), |ui| {
@@ -232,20 +257,28 @@ pub fn show_audio(ui: &mut egui::Ui, path: &Path, p: &Palette, player: &mut Audi
         ui.add_space(16.0);
         ui.centered_and_justified(|ui| {
             ui.horizontal(|ui| {
-                if ui.add_sized(
-                    Vec2::new(34.0, 34.0),
-                    egui::Button::new(RichText::new(if playing { "⏸" } else { "▶" }).size(16.0))
+                if ui
+                    .add_sized(
+                        Vec2::new(34.0, 34.0),
+                        egui::Button::new(
+                            RichText::new(if playing { "⏸" } else { "▶" }).size(16.0),
+                        )
                         .fill(p.accent)
                         .rounding(Rounding::same(17.0)),
-                ).clicked() {
+                    )
+                    .clicked()
+                {
                     player.toggle(path);
                 }
-                if ui.add_sized(
-                    Vec2::new(34.0, 34.0),
-                    egui::Button::new(RichText::new("⏹").size(15.0))
-                        .fill(p.button_bg)
-                        .rounding(Rounding::same(17.0)),
-                ).clicked() {
+                if ui
+                    .add_sized(
+                        Vec2::new(34.0, 34.0),
+                        egui::Button::new(RichText::new("⏹").size(15.0))
+                            .fill(p.button_bg)
+                            .rounding(Rounding::same(17.0)),
+                    )
+                    .clicked()
+                {
                     player.stop();
                 }
             });
@@ -263,13 +296,17 @@ pub fn show_audio(ui: &mut egui::Ui, path: &Path, p: &Palette, player: &mut Audi
             if (vol - player.volume).abs() > 0.001 {
                 player.set_volume(vol);
             }
-            ui.label(RichText::new(format!("{:>3}%", (player.volume * 100.0).round() as i32))
-                .size(11.0).color(p.text_dim));
+            ui.label(
+                RichText::new(format!("{:>3}%", (player.volume * 100.0).round() as i32))
+                    .size(11.0)
+                    .color(p.text_dim),
+            );
         });
     });
 
     if playing {
-        ui.ctx().request_repaint_after(std::time::Duration::from_millis(250));
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_millis(250));
     }
 }
 

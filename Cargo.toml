@@ -1,9 +1,17 @@
 [package]
 name = "soyabean"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "A minimal yet powerful terminal code IDE"
+license = "MIT"
+repository = "https://github.com/zenformality/soyabean"
+homepage = "https://github.com/zenformality/soyabean"
+keywords = ["editor", "ide", "terminal", "gui"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
 autobins = false
+
+[workspace]
 
 [dependencies]
 crossterm = { version = "0.28", features = ["bracketed-paste"] }
@@ -25,3 +33,13 @@ path = "src/bin/soyabean_gui.rs"
 lto = true
 strip = true
 opt-level = 3
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+[package.metadata.dist]
+# Icons for installers
+app-icon = "assets/soyabean-512.png"      # AppImage (Linux)
+windows-icon = "assets/soyabean.ico"      # NSIS installer (Windows)

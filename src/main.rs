@@ -8,10 +8,10 @@ use crossterm::cursor::Show;
 use crossterm::event::{
     DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
 };
+use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, SetTitle,
 };
-use crossterm::execute;
 
 fn restore_terminal() {
     let mut out = io::stdout();
@@ -44,7 +44,12 @@ fn main() -> io::Result<()> {
 
     enable_raw_mode()?;
     let mut out = io::stdout();
-    execute!(out, EnterAlternateScreen, EnableMouseCapture, SetTitle("soyabean"))?;
+    execute!(
+        out,
+        EnterAlternateScreen,
+        EnableMouseCapture,
+        SetTitle("soyabean")
+    )?;
     // Not supported by every terminal (e.g. legacy Windows console) — ignore.
     let _ = execute!(out, EnableBracketedPaste);
 

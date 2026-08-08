@@ -1441,7 +1441,7 @@ impl GuiApp {
                             .color(p.accent),
                     );
                     ui.label(
-                        RichText::new("v0.2.0 Modernized Edition")
+                        RichText::new("v1.0.0 Modernized Edition")
                             .size(12.0)
                             .color(p.text_dim),
                     );

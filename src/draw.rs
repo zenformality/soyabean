@@ -13,23 +13,91 @@ use crate::buffer::{ch_width, visual_col};
 use crate::editor::{Editor, Mode};
 use crate::syntax::{self, Tok};
 
-const C_NORMAL: Color = Color::Rgb { r: 212, g: 212, b: 212 };
-const C_KEYWORD: Color = Color::Rgb { r: 197, g: 134, b: 192 };
-const C_TYPE: Color = Color::Rgb { r: 78, g: 201, b: 176 };
-const C_STR: Color = Color::Rgb { r: 206, g: 145, b: 120 };
-const C_COMMENT: Color = Color::Rgb { r: 106, g: 153, b: 85 };
-const C_NUMBER: Color = Color::Rgb { r: 181, g: 206, b: 168 };
-const C_FUNC: Color = Color::Rgb { r: 220, g: 220, b: 170 };
-const C_PUNCT: Color = Color::Rgb { r: 154, g: 165, b: 180 };
-const C_GUTTER: Color = Color::Rgb { r: 100, g: 105, b: 110 };
-const C_GUTTER_CUR: Color = Color::Rgb { r: 210, g: 210, b: 210 };
-const BG_SEL: Color = Color::Rgb { r: 38, g: 79, b: 120 };
-const BG_CURLINE: Color = Color::Rgb { r: 40, g: 42, b: 48 };
-const BG_STATUS: Color = Color::Rgb { r: 50, g: 58, b: 72 };
-const FG_STATUS: Color = Color::Rgb { r: 230, g: 230, b: 230 };
-const FG_DIM: Color = Color::Rgb { r: 130, g: 135, b: 140 };
-const BG_FINDER_SEL: Color = Color::Rgb { r: 45, g: 70, b: 100 };
-const C_ACCENT: Color = Color::Rgb { r: 120, g: 200, b: 120 };
+const C_NORMAL: Color = Color::Rgb {
+    r: 212,
+    g: 212,
+    b: 212,
+};
+const C_KEYWORD: Color = Color::Rgb {
+    r: 197,
+    g: 134,
+    b: 192,
+};
+const C_TYPE: Color = Color::Rgb {
+    r: 78,
+    g: 201,
+    b: 176,
+};
+const C_STR: Color = Color::Rgb {
+    r: 206,
+    g: 145,
+    b: 120,
+};
+const C_COMMENT: Color = Color::Rgb {
+    r: 106,
+    g: 153,
+    b: 85,
+};
+const C_NUMBER: Color = Color::Rgb {
+    r: 181,
+    g: 206,
+    b: 168,
+};
+const C_FUNC: Color = Color::Rgb {
+    r: 220,
+    g: 220,
+    b: 170,
+};
+const C_PUNCT: Color = Color::Rgb {
+    r: 154,
+    g: 165,
+    b: 180,
+};
+const C_GUTTER: Color = Color::Rgb {
+    r: 100,
+    g: 105,
+    b: 110,
+};
+const C_GUTTER_CUR: Color = Color::Rgb {
+    r: 210,
+    g: 210,
+    b: 210,
+};
+const BG_SEL: Color = Color::Rgb {
+    r: 38,
+    g: 79,
+    b: 120,
+};
+const BG_CURLINE: Color = Color::Rgb {
+    r: 40,
+    g: 42,
+    b: 48,
+};
+const BG_STATUS: Color = Color::Rgb {
+    r: 50,
+    g: 58,
+    b: 72,
+};
+const FG_STATUS: Color = Color::Rgb {
+    r: 230,
+    g: 230,
+    b: 230,
+};
+const FG_DIM: Color = Color::Rgb {
+    r: 130,
+    g: 135,
+    b: 140,
+};
+const BG_FINDER_SEL: Color = Color::Rgb {
+    r: 45,
+    g: 70,
+    b: 100,
+};
+const C_ACCENT: Color = Color::Rgb {
+    r: 120,
+    g: 200,
+    b: 120,
+};
 
 fn tok_color(t: Tok) -> Color {
     match t {
@@ -128,7 +196,12 @@ fn render_text(
 
     for row in 0..text_h {
         let y = b.row_off + row;
-        queue!(out, MoveTo(0, row as u16), ResetColor, Clear(ClearType::UntilNewLine))?;
+        queue!(
+            out,
+            MoveTo(0, row as u16),
+            ResetColor,
+            Clear(ClearType::UntilNewLine)
+        )?;
 
         if y >= b.lines.len() {
             queue!(out, SetForegroundColor(FG_DIM), Print("~"))?;
@@ -137,7 +210,11 @@ fn render_text(
 
         let cur_line = y == b.cy && sel.is_none();
         if cur_line {
-            queue!(out, SetBackgroundColor(BG_CURLINE), Clear(ClearType::UntilNewLine))?;
+            queue!(
+                out,
+                SetBackgroundColor(BG_CURLINE),
+                Clear(ClearType::UntilNewLine)
+            )?;
         }
 
         // Gutter.
@@ -223,13 +300,22 @@ fn render_finder(ed: &Editor, out: &mut impl Write, w: usize, text_h: usize) -> 
         SetForegroundColor(C_NORMAL),
         Print(&f.query),
         SetForegroundColor(FG_DIM),
-        Print(format!("   ({} / {} files)", f.matched.len(), f.files.len()))
+        Print(format!(
+            "   ({} / {} files)",
+            f.matched.len(),
+            f.files.len()
+        ))
     )?;
 
     let list_h = text_h.saturating_sub(1);
     for row in 0..list_h {
         let idx = f.scroll + row;
-        queue!(out, MoveTo(0, (row + 1) as u16), ResetColor, Clear(ClearType::UntilNewLine))?;
+        queue!(
+            out,
+            MoveTo(0, (row + 1) as u16),
+            ResetColor,
+            Clear(ClearType::UntilNewLine)
+        )?;
         if idx >= f.matched.len() {
             continue;
         }
@@ -293,7 +379,12 @@ fn render_status(ed: &Editor, out: &mut impl Write, w: usize, h: usize) -> io::R
 }
 
 fn render_message(ed: &Editor, out: &mut impl Write, w: usize, h: usize) -> io::Result<()> {
-    queue!(out, MoveTo(0, (h - 1) as u16), ResetColor, Clear(ClearType::UntilNewLine))?;
+    queue!(
+        out,
+        MoveTo(0, (h - 1) as u16),
+        ResetColor,
+        Clear(ClearType::UntilNewLine)
+    )?;
     match ed.mode {
         Mode::Find | Mode::Goto | Mode::SaveAs => {
             queue!(
@@ -316,7 +407,11 @@ fn render_message(ed: &Editor, out: &mut impl Write, w: usize, h: usize) -> io::
                 }
             }
             let hints = " ^S save   ^P open   ^F find   ^N new   ^W close   F1 help   ^Q quit";
-            queue!(out, SetForegroundColor(FG_DIM), Print(pad_to(hints, w.saturating_sub(1))))?;
+            queue!(
+                out,
+                SetForegroundColor(FG_DIM),
+                Print(pad_to(hints, w.saturating_sub(1)))
+            )?;
         }
     }
     Ok(())

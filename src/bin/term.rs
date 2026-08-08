@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
 
-use eframe::egui::{self, Color32, FontId, Id, Rect, Sense, Stroke, TextFormat, pos2, vec2};
 use eframe::egui::text::LayoutJob;
+use eframe::egui::{self, pos2, vec2, Color32, FontId, Id, Rect, Sense, Stroke, TextFormat};
 use unicode_width::UnicodeWidthChar;
 
 use super::theme::Palette;
@@ -17,21 +17,21 @@ use super::theme::Palette;
 const SCROLLBACK: usize = 1500;
 
 const ANSI16: [Color32; 16] = [
-    Color32::from_rgb(14, 17, 22),  // 0 black
+    Color32::from_rgb(14, 17, 22),    // 0 black
     Color32::from_rgb(224, 108, 117), // 1 red
     Color32::from_rgb(152, 195, 121), // 2 green
     Color32::from_rgb(209, 154, 102), // 3 yellow
-    Color32::from_rgb(97, 175, 239), // 4 blue
+    Color32::from_rgb(97, 175, 239),  // 4 blue
     Color32::from_rgb(198, 120, 221), // 5 magenta
-    Color32::from_rgb(86, 182, 194), // 6 cyan
+    Color32::from_rgb(86, 182, 194),  // 6 cyan
     Color32::from_rgb(220, 223, 228), // 7 white
     Color32::from_rgb(127, 132, 142), // 8 bright black
     Color32::from_rgb(240, 113, 120), // 9 bright red
     Color32::from_rgb(152, 195, 121), // 10 bright green
     Color32::from_rgb(229, 192, 123), // 11 bright yellow
-    Color32::from_rgb(97, 175, 239), // 12 bright blue
+    Color32::from_rgb(97, 175, 239),  // 12 bright blue
     Color32::from_rgb(198, 120, 221), // 13 bright magenta
-    Color32::from_rgb(86, 182, 194), // 14 bright cyan
+    Color32::from_rgb(86, 182, 194),  // 14 bright cyan
     Color32::from_rgb(255, 255, 255), // 15 bright white
 ];
 
@@ -68,7 +68,10 @@ struct Cell {
 
 impl Default for Cell {
     fn default() -> Self {
-        Cell { c: ' ', style: Style::default() }
+        Cell {
+            c: ' ',
+            style: Style::default(),
+        }
     }
 }
 
@@ -110,7 +113,12 @@ impl Terminal {
     pub fn spawn(cwd: &Path, ctx: &egui::Context) -> Option<Terminal> {
         let pty_system = portable_pty::native_pty_system();
         let pair = pty_system
-            .openpty(portable_pty::PtySize { rows: 24, cols: 80, pixel_width: 0, pixel_height: 0 })
+            .openpty(portable_pty::PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
             .ok()?;
         let (shell, args) = build_shell_command();
         let mut cmd = portable_pty::CommandBuilder::new(shell);
@@ -215,7 +223,9 @@ impl Terminal {
     }
 
     fn blank_line(cols: usize) -> Line {
-        Line { cells: vec![Cell::default(); cols] }
+        Line {
+            cells: vec![Cell::default(); cols],
+        }
     }
 
     fn check_exit(&mut self) {
@@ -274,7 +284,10 @@ impl Terminal {
                 b'c' => {
                     self.history.clear();
                     for r in 0..self.rows {
-                        self.screen[r].cells.iter_mut().for_each(|x| *x = Cell::default());
+                        self.screen[r]
+                            .cells
+                            .iter_mut()
+                            .for_each(|x| *x = Cell::default());
                     }
                     self.cur = (0, 0);
                     self.style = Style::default();
@@ -406,15 +419,41 @@ impl Terminal {
             params.push(cur);
         }
         match finalb {
-            b'A' => self.cur.0 = self.cur.0.saturating_sub(param(&params, 0, 1).max(1) as usize),
-            b'B' => self.cur.0 = (self.cur.0 + param(&params, 0, 1).max(1) as usize).min(self.rows - 1),
-            b'C' => self.cur.1 = (self.cur.1 + param(&params, 0, 1).max(1) as usize).min(self.cols - 1),
-            b'D' => self.cur.1 = self.cur.1.saturating_sub(param(&params, 0, 1).max(1) as usize),
-            b'G' => self.cur.1 = (param(&params, 0, 1) as usize).saturating_sub(1).min(self.cols - 1),
-            b'd' => self.cur.0 = (param(&params, 0, 1) as usize).saturating_sub(1).min(self.rows - 1),
+            b'A' => {
+                self.cur.0 = self
+                    .cur
+                    .0
+                    .saturating_sub(param(&params, 0, 1).max(1) as usize)
+            }
+            b'B' => {
+                self.cur.0 = (self.cur.0 + param(&params, 0, 1).max(1) as usize).min(self.rows - 1)
+            }
+            b'C' => {
+                self.cur.1 = (self.cur.1 + param(&params, 0, 1).max(1) as usize).min(self.cols - 1)
+            }
+            b'D' => {
+                self.cur.1 = self
+                    .cur
+                    .1
+                    .saturating_sub(param(&params, 0, 1).max(1) as usize)
+            }
+            b'G' => {
+                self.cur.1 = (param(&params, 0, 1) as usize)
+                    .saturating_sub(1)
+                    .min(self.cols - 1)
+            }
+            b'd' => {
+                self.cur.0 = (param(&params, 0, 1) as usize)
+                    .saturating_sub(1)
+                    .min(self.rows - 1)
+            }
             b'H' | b'f' => {
-                self.cur.0 = (param(&params, 0, 1) as usize).saturating_sub(1).min(self.rows - 1);
-                self.cur.1 = (param(&params, 1, 1) as usize).saturating_sub(1).min(self.cols - 1);
+                self.cur.0 = (param(&params, 0, 1) as usize)
+                    .saturating_sub(1)
+                    .min(self.rows - 1);
+                self.cur.1 = (param(&params, 1, 1) as usize)
+                    .saturating_sub(1)
+                    .min(self.cols - 1);
             }
             b'J' => self.erase_display(param(&params, 0, 0)),
             b'K' => self.erase_line(param(&params, 0, 0)),
@@ -484,8 +523,12 @@ impl Terminal {
         let (r, c) = (self.cur.0, self.cur.1);
         let line = &mut self.screen[r];
         match mode {
-            0 => line.cells[c..].iter_mut().for_each(|x| *x = Cell::default()),
-            1 => line.cells[..=c].iter_mut().for_each(|x| *x = Cell::default()),
+            0 => line.cells[c..]
+                .iter_mut()
+                .for_each(|x| *x = Cell::default()),
+            1 => line.cells[..=c]
+                .iter_mut()
+                .for_each(|x| *x = Cell::default()),
             _ => line.cells.iter_mut().for_each(|x| *x = Cell::default()),
         }
     }
@@ -495,19 +538,28 @@ impl Terminal {
             0 => {
                 self.erase_line(0);
                 for r in self.cur.0 + 1..self.rows {
-                    self.screen[r].cells.iter_mut().for_each(|x| *x = Cell::default());
+                    self.screen[r]
+                        .cells
+                        .iter_mut()
+                        .for_each(|x| *x = Cell::default());
                 }
             }
             1 => {
                 for r in 0..self.cur.0 {
-                    self.screen[r].cells.iter_mut().for_each(|x| *x = Cell::default());
+                    self.screen[r]
+                        .cells
+                        .iter_mut()
+                        .for_each(|x| *x = Cell::default());
                 }
                 self.erase_line(1);
             }
             _ => {
                 self.history.clear();
                 for r in 0..self.rows {
-                    self.screen[r].cells.iter_mut().for_each(|x| *x = Cell::default());
+                    self.screen[r]
+                        .cells
+                        .iter_mut()
+                        .for_each(|x| *x = Cell::default());
                 }
                 self.cur = (0, 0);
             }
@@ -515,13 +567,21 @@ impl Terminal {
     }
 
     fn osc(&mut self, buf: &[u8]) {
-        let raw = if buf.first() == Some(&0x1b) { &buf[1..] } else { buf };
+        let raw = if buf.first() == Some(&0x1b) {
+            &buf[1..]
+        } else {
+            buf
+        };
         let semi = raw.iter().position(|&b| b == b';').unwrap_or(raw.len());
         let code: u32 = std::str::from_utf8(&raw[..semi])
             .ok()
             .and_then(|s| s.trim().parse().ok())
             .unwrap_or(0);
-        let body = if semi < raw.len() { &raw[semi + 1..] } else { &[] };
+        let body = if semi < raw.len() {
+            &raw[semi + 1..]
+        } else {
+            &[]
+        };
         match code {
             0 | 2 => {
                 if let Ok(s) = std::str::from_utf8(body) {
@@ -569,7 +629,12 @@ impl Terminal {
                 // `Text` only to avoid double-sending.
                 egui::Event::Text(s) => self.write(s.as_bytes()),
                 egui::Event::Paste(s) => self.write(s.as_bytes()),
-                egui::Event::Key { key, pressed: true, modifiers, .. } => {
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    modifiers,
+                    ..
+                } => {
                     let ctrl = modifiers.ctrl || modifiers.command;
                     let alt = modifiers.alt;
                     let shift = modifiers.shift;
@@ -587,7 +652,13 @@ impl Terminal {
                     let seq: &[u8] = match key {
                         egui::Key::Enter => b"\r",
                         egui::Key::Backspace => b"\x7f",
-                        egui::Key::Tab => if shift { b"\x1b[Z" } else { b"\t" },
+                        egui::Key::Tab => {
+                            if shift {
+                                b"\x1b[Z"
+                            } else {
+                                b"\t"
+                            }
+                        }
                         egui::Key::Escape => b"\x1b",
                         egui::Key::Delete => b"\x1b[3~",
                         egui::Key::Insert => b"\x1b[2~",
@@ -661,7 +732,8 @@ impl Terminal {
             if scroll.abs() > 0.0 {
                 let n = 3;
                 if scroll > 0.0 {
-                    self.scroll_off = (self.scroll_off + n).min(self.total_lines().saturating_sub(self.rows));
+                    self.scroll_off =
+                        (self.scroll_off + n).min(self.total_lines().saturating_sub(self.rows));
                 } else {
                     self.scroll_off = self.scroll_off.saturating_sub(n);
                 }
@@ -676,7 +748,9 @@ impl Terminal {
         let mut row = 0usize;
         for i in start..start + self.rows {
             let y = rect.top() + row as f32 * row_h;
-            let line = self.line_at(i).cloned().unwrap_or_else(|| Line { cells: vec![Cell::default(); self.cols] });
+            let line = self.line_at(i).cloned().unwrap_or_else(|| Line {
+                cells: vec![Cell::default(); self.cols],
+            });
             self.paint_line(&painter, p, &line, rect, y, &font_id, fg_default);
             row += 1;
         }
@@ -693,12 +767,14 @@ impl Terminal {
                 if blink {
                     painter.rect_filled(
                         Rect::from_min_size(pos2(x, y), vec2(cw, row_h)),
-                        0.0, fg.gamma_multiply(0.55),
+                        0.0,
+                        fg.gamma_multiply(0.55),
                     );
                 } else {
                     painter.rect_filled(
                         Rect::from_min_size(pos2(x, y + row_h - 2.0_f32), vec2(cw, 2.0_f32)),
-                        0.0, p.cursor_col,
+                        0.0,
+                        p.cursor_col,
                     );
                 }
                 let _ = bg;
@@ -720,7 +796,9 @@ impl Terminal {
         let mut run = String::new();
         let mut key: Option<(Color32, Option<Color32>, bool)> = None;
 
-        let flush = |job: &mut LayoutJob, run: &mut String, key: &Option<(Color32, Option<Color32>, bool)>| {
+        let flush = |job: &mut LayoutJob,
+                     run: &mut String,
+                     key: &Option<(Color32, Option<Color32>, bool)>| {
             if run.is_empty() {
                 return;
             }
@@ -732,7 +810,11 @@ impl Terminal {
                     font_id: font_id.clone(),
                     color: fg,
                     background: bg.unwrap_or(Color32::TRANSPARENT),
-                    underline: if ul { Stroke::new(1.0_f32, fg) } else { Stroke::NONE },
+                    underline: if ul {
+                        Stroke::new(1.0_f32, fg)
+                    } else {
+                        Stroke::NONE
+                    },
                     ..Default::default()
                 },
             );
@@ -778,16 +860,42 @@ fn param(params: &[u32], i: usize, default: u32) -> u32 {
 fn key_char(key: egui::Key) -> Option<char> {
     use egui::Key as K;
     match key {
-        K::A => Some('a'), K::B => Some('b'), K::C => Some('c'), K::D => Some('d'),
-        K::E => Some('e'), K::F => Some('f'), K::G => Some('g'), K::H => Some('h'),
-        K::I => Some('i'), K::J => Some('j'), K::K => Some('k'), K::L => Some('l'),
-        K::M => Some('m'), K::N => Some('n'), K::O => Some('o'), K::P => Some('p'),
-        K::Q => Some('q'), K::R => Some('r'), K::S => Some('s'), K::T => Some('t'),
-        K::U => Some('u'), K::V => Some('v'), K::W => Some('w'), K::X => Some('x'),
-        K::Y => Some('y'), K::Z => Some('z'),
-        K::Num0 => Some('0'), K::Num1 => Some('1'), K::Num2 => Some('2'), K::Num3 => Some('3'),
-        K::Num4 => Some('4'), K::Num5 => Some('5'), K::Num6 => Some('6'), K::Num7 => Some('7'),
-        K::Num8 => Some('8'), K::Num9 => Some('9'),
+        K::A => Some('a'),
+        K::B => Some('b'),
+        K::C => Some('c'),
+        K::D => Some('d'),
+        K::E => Some('e'),
+        K::F => Some('f'),
+        K::G => Some('g'),
+        K::H => Some('h'),
+        K::I => Some('i'),
+        K::J => Some('j'),
+        K::K => Some('k'),
+        K::L => Some('l'),
+        K::M => Some('m'),
+        K::N => Some('n'),
+        K::O => Some('o'),
+        K::P => Some('p'),
+        K::Q => Some('q'),
+        K::R => Some('r'),
+        K::S => Some('s'),
+        K::T => Some('t'),
+        K::U => Some('u'),
+        K::V => Some('v'),
+        K::W => Some('w'),
+        K::X => Some('x'),
+        K::Y => Some('y'),
+        K::Z => Some('z'),
+        K::Num0 => Some('0'),
+        K::Num1 => Some('1'),
+        K::Num2 => Some('2'),
+        K::Num3 => Some('3'),
+        K::Num4 => Some('4'),
+        K::Num5 => Some('5'),
+        K::Num6 => Some('6'),
+        K::Num7 => Some('7'),
+        K::Num8 => Some('8'),
+        K::Num9 => Some('9'),
         K::Space => Some(' '),
         _ => None,
     }
@@ -875,8 +983,7 @@ mod tests {
 
     #[test]
     fn osc7_parses_windows_path() {
-        let p = osc7_path("file://LAPTOP/C:/Users/Me/some%20dir")
-            .expect("parse");
+        let p = osc7_path("file://LAPTOP/C:/Users/Me/some%20dir").expect("parse");
         #[cfg(target_os = "windows")]
         assert_eq!(p, PathBuf::from("C:\\Users\\Me\\some dir"));
         #[cfg(not(target_os = "windows"))]

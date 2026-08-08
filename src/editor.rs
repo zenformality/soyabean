@@ -165,7 +165,9 @@ impl Editor {
     }
 
     fn text_w(&self) -> usize {
-        (self.size.0 as usize).saturating_sub(self.gutter_w()).max(1)
+        (self.size.0 as usize)
+            .saturating_sub(self.gutter_w())
+            .max(1)
     }
 
     /// Keep offsets within legal bounds (does not chase the cursor).
@@ -397,32 +399,95 @@ impl Editor {
             }
 
             // --- movement ---
-            KeyCode::Left if ctrl => { self.buf_mut().word_left(shift); self.ensure_visible(); }
-            KeyCode::Right if ctrl => { self.buf_mut().word_right(shift); self.ensure_visible(); }
-            KeyCode::Home if ctrl => { self.buf_mut().doc_start(shift); self.ensure_visible(); }
-            KeyCode::End if ctrl => { self.buf_mut().doc_end(shift); self.ensure_visible(); }
-            KeyCode::Up if alt => { self.buf_mut().move_line(true); self.ensure_visible(); }
-            KeyCode::Down if alt => { self.buf_mut().move_line(false); self.ensure_visible(); }
-            KeyCode::Left => { self.buf_mut().left(shift); self.ensure_visible(); }
-            KeyCode::Right => { self.buf_mut().right(shift); self.ensure_visible(); }
-            KeyCode::Up => { self.buf_mut().up(shift); self.ensure_visible(); }
-            KeyCode::Down => { self.buf_mut().down(shift); self.ensure_visible(); }
-            KeyCode::Home => { self.buf_mut().home(shift); self.ensure_visible(); }
-            KeyCode::End => { self.buf_mut().end(shift); self.ensure_visible(); }
-            KeyCode::PageUp => { self.buf_mut().page_up(page, shift); self.ensure_visible(); }
-            KeyCode::PageDown => { self.buf_mut().page_down(page, shift); self.ensure_visible(); }
+            KeyCode::Left if ctrl => {
+                self.buf_mut().word_left(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Right if ctrl => {
+                self.buf_mut().word_right(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Home if ctrl => {
+                self.buf_mut().doc_start(shift);
+                self.ensure_visible();
+            }
+            KeyCode::End if ctrl => {
+                self.buf_mut().doc_end(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Up if alt => {
+                self.buf_mut().move_line(true);
+                self.ensure_visible();
+            }
+            KeyCode::Down if alt => {
+                self.buf_mut().move_line(false);
+                self.ensure_visible();
+            }
+            KeyCode::Left => {
+                self.buf_mut().left(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Right => {
+                self.buf_mut().right(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Up => {
+                self.buf_mut().up(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Down => {
+                self.buf_mut().down(shift);
+                self.ensure_visible();
+            }
+            KeyCode::Home => {
+                self.buf_mut().home(shift);
+                self.ensure_visible();
+            }
+            KeyCode::End => {
+                self.buf_mut().end(shift);
+                self.ensure_visible();
+            }
+            KeyCode::PageUp => {
+                self.buf_mut().page_up(page, shift);
+                self.ensure_visible();
+            }
+            KeyCode::PageDown => {
+                self.buf_mut().page_down(page, shift);
+                self.ensure_visible();
+            }
             KeyCode::Esc => {
                 self.buf_mut().anchor = None;
             }
 
             // --- editing ---
-            KeyCode::Enter => { self.buf_mut().insert_newline(); self.ensure_visible(); }
-            KeyCode::Backspace if ctrl => { self.buf_mut().delete_word_back(); self.ensure_visible(); }
-            KeyCode::Delete if ctrl => { self.buf_mut().delete_word_fwd(); self.ensure_visible(); }
-            KeyCode::Backspace => { self.buf_mut().backspace(); self.ensure_visible(); }
-            KeyCode::Delete => { self.buf_mut().delete_forward(); self.ensure_visible(); }
-            KeyCode::Tab => { self.buf_mut().insert_tab(); self.ensure_visible(); }
-            KeyCode::BackTab => { self.buf_mut().indent_lines(false); self.ensure_visible(); }
+            KeyCode::Enter => {
+                self.buf_mut().insert_newline();
+                self.ensure_visible();
+            }
+            KeyCode::Backspace if ctrl => {
+                self.buf_mut().delete_word_back();
+                self.ensure_visible();
+            }
+            KeyCode::Delete if ctrl => {
+                self.buf_mut().delete_word_fwd();
+                self.ensure_visible();
+            }
+            KeyCode::Backspace => {
+                self.buf_mut().backspace();
+                self.ensure_visible();
+            }
+            KeyCode::Delete => {
+                self.buf_mut().delete_forward();
+                self.ensure_visible();
+            }
+            KeyCode::Tab => {
+                self.buf_mut().insert_tab();
+                self.ensure_visible();
+            }
+            KeyCode::BackTab => {
+                self.buf_mut().indent_lines(false);
+                self.ensure_visible();
+            }
             KeyCode::Char(c) if !ctrl && !alt => {
                 self.buf_mut().insert_char(c);
                 self.ensure_visible();
@@ -495,7 +560,11 @@ impl Editor {
                             self.msg("Save cancelled (empty name)");
                         } else {
                             let p = PathBuf::from(t);
-                            let p = if p.is_absolute() { p } else { self.root.join(p) };
+                            let p = if p.is_absolute() {
+                                p
+                            } else {
+                                self.root.join(p)
+                            };
                             self.buf_mut().path = Some(p);
                             self.buf_mut().is_scratch = false;
                             self.mode = Mode::Edit;
@@ -558,7 +627,9 @@ impl Editor {
     }
 
     fn live_search(&mut self) {
-        let Some((cy, cx, ro, co)) = self.saved_view else { return };
+        let Some((cy, cx, ro, co)) = self.saved_view else {
+            return;
+        };
         if self.input.is_empty() {
             let b = self.buf_mut();
             b.set_cursor(cy, cx, false);
@@ -751,7 +822,11 @@ impl Editor {
 
     pub fn open_file(&mut self, path: PathBuf) {
         // Already open? Just switch.
-        if let Some(i) = self.bufs.iter().position(|b| b.path.as_ref() == Some(&path)) {
+        if let Some(i) = self
+            .bufs
+            .iter()
+            .position(|b| b.path.as_ref() == Some(&path))
+        {
             self.cur = i;
             return;
         }
@@ -895,9 +970,17 @@ impl Editor {
 fn os_copy(text: &str) {
     use std::process::{Command, Stdio};
     #[cfg(target_os = "windows")]
-    let cmd = Command::new("clip").stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null()).spawn();
+    let cmd = Command::new("clip")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn();
     #[cfg(target_os = "macos")]
-    let cmd = Command::new("pbcopy").stdin(Stdio::piped()).stdout(Stdio::null()).stderr(Stdio::null()).spawn();
+    let cmd = Command::new("pbcopy")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn();
     #[cfg(all(unix, not(target_os = "macos")))]
     let cmd = Command::new("xclip")
         .args(["-selection", "clipboard"])

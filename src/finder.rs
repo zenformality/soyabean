@@ -6,8 +6,19 @@ use std::time::Instant;
 
 const MAX_FILES: usize = 20_000;
 const SKIP_DIRS: &[&str] = &[
-    ".git", "target", "node_modules", "dist", "build", "__pycache__", ".venv", "venv",
-    ".idea", ".vscode", "out", "bin", "obj",
+    ".git",
+    "target",
+    "node_modules",
+    "dist",
+    "build",
+    "__pycache__",
+    ".venv",
+    "venv",
+    ".idea",
+    ".vscode",
+    "out",
+    "bin",
+    "obj",
 ];
 
 pub struct Finder {
@@ -32,9 +43,7 @@ impl Finder {
     }
 
     pub fn open(&mut self, root: &Path) {
-        let stale = self
-            .scanned_at
-            .is_none_or(|t| t.elapsed().as_secs() > 10);
+        let stale = self.scanned_at.is_none_or(|t| t.elapsed().as_secs() > 10);
         if stale {
             self.files = scan(root);
             self.scanned_at = Some(Instant::now());
@@ -52,7 +61,10 @@ impl Finder {
             .enumerate()
             .filter_map(|(i, f)| fuzzy_score(&self.query, f).map(|s| (s, i)))
             .collect();
-        scored.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| self.files[a.1].len().cmp(&self.files[b.1].len())));
+        scored.sort_by(|a, b| {
+            b.0.cmp(&a.0)
+                .then_with(|| self.files[a.1].len().cmp(&self.files[b.1].len()))
+        });
         scored.truncate(500);
         self.matched = scored.into_iter().map(|(_, i)| i).collect();
         self.sel = 0;
