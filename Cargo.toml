@@ -43,4 +43,4 @@ lto = "thin"
 # Icons for installers
 app-icon = "assets/soyabean-512.png"      # AppImage (Linux)
 windows-icon = "assets/soyabean.ico"      # NSIS installer (Windows)
-allow-dirty = true
+allow-dirty = ["allow-all"]

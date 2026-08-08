@@ -1,6 +1,6 @@
 <div align="center">
 
-# soyabean 🌱
+# soyabean
 
 ![soyabean logo](assets/soyabean-512.png)
 
@@ -9,7 +9,7 @@ A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rus
 [![GitHub release](https://img.shields.io/github/v/release/zenformality/soyabean?style=for-the-badge&label=version&color=2ea44f)](https://github.com/zenformality/soyabean/releases/latest)
 [![GitHub License](https://img.shields.io/github/license/zenformality/soyabean?style=for-the-badge&color=555)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/zenformality/soyabean/release.yml?style=for-the-badge&label=build)](https://github.com/zenformality/soyabean/actions/workflows/release.yml)
-[![Rust Version](https://img.shields.io/badge/rust-1.97+-style=for-the-badge&color=dea584&logo=rust)](https://rust-lang.org)
+[![Rust Version](https://img.shields.io/badge/rust-1.97%2B-style=for-the-badge&color=dea584&logo=rust)](https://rust-lang.org)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](#downloads)
 [![Lines of Code](https://img.shields.io/tokei/lines/github/zenformality/soyabean?style=for-the-badge&color=informational)](src)
 
@@ -17,7 +17,7 @@ A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rus
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -40,10 +40,10 @@ soyabean_gui [FILE...]
 
 ---
 
-## ✨ Features
+## Features
 
-### 🎨 Modern GUI (`soyabean_gui`)
-- **VS Code–style file explorer** with drag & drop, context menus (New File/Folder, Rename, Delete, Reveal)
+### Modern GUI (`soyabean_gui`)
+- **VS Code-style file explorer** with drag & drop, context menus (New File/Folder, Rename, Delete, Reveal)
 - **Integrated terminal** (PowerShell on Windows) with OSC 7 cwd tracking and command history
 - **Tabbed editing** with file-type icons, current-line highlight, configurable cursor blink
 - **Themes**: Zed Dark / Light / Tokyo Night — switch via Command Palette (`Ctrl+Shift+P`)
@@ -51,34 +51,34 @@ soyabean_gui [FILE...]
 - **Breadcrumbs** navigation bar
 - **Status bar** with mode, encoding, cursor position, git branch
 
-### ⌨️ Core Editing (TUI + GUI)
+### Core Editing (TUI + GUI)
 - **Syntax highlighting** for 30+ languages (Rust, C/C++, Python, JS/TS, Go, Java, JSON, TOML, YAML, HTML, CSS, Shell, etc.) with multi-line block comments
 - **Fuzzy file finder** (`Ctrl+P`) with smart scoring (filename + word-boundary bonuses)
-- **Multiple buffers** with instant switching (`Alt+←/→`, `Alt+1..9`)
+- **Multiple buffers** with instant switching (`Alt+Left/Right`, `Alt+1..9`)
 - **Incremental search** (`Ctrl+F`) with smart case, wrap-around, live matching; `F3`/`Shift+F3` repeat
 - **Undo / Redo** with keystroke coalescing (`Ctrl+Z` / `Ctrl+Y`)
 - **Selections**: mouse drag, `Shift`+movement; copy/cut/paste with system clipboard mirroring
 - **Smart editing**: auto-indent on Enter, extra indent after `{ ( [ :`, tab-aware Backspace, block indent/dedent, duplicate/move/delete line, word selection
 
-### 🖱️ Mouse & Unicode
+### Mouse & Unicode
 - Click to place cursor, drag to select, wheel to scroll
 - Unicode-aware (wide chars, tabs), CRLF/LF detection + preservation
 - Line numbers, current-line highlight, smart Home key
 
-### 📁 File & Media
+### File & Media
 - **Image preview** (PNG/JPG/GIF/BMP/WebP/ICO/TIFF) scaled to fit
-- **Audio playback** (MP3/WAV/OGG/FLAC/M4A) with ▶/⏸/⏹ and volume
+- **Audio playback** (MP3/WAV/OGG/FLAC/M4A) with play/pause/stop and volume
 - **Drag & drop** in file tree to move files/folders
 
-### ⚡ Integrated Terminal (GUI)
+### Integrated Terminal (GUI)
 - PowerShell (Windows) / `$SHELL` (Linux/macOS)
 - OSC 7 cwd tracking — terminal updates sidebar on `cd`
-- Command bar with cwd display, history (↑/↓), Enter/▶ to run
-- Ctrl+` toggles terminal drawer
+- Command bar with cwd display, history (Up/Down), Enter/Run to execute
+- `Ctrl+` toggles terminal drawer
 
 ---
 
-## ⌨️ Keybindings
+## Keybindings
 
 | Key | Action |
 |-----|--------|
@@ -92,8 +92,8 @@ soyabean_gui [FILE...]
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy / Cut / Paste (whole line if no selection) |
 | `Ctrl+D` | Select word / Duplicate line |
 | `Ctrl+K` | Delete line |
-| `Alt+↑/↓` | Move line up / down |
-| `Alt+←/→` | Switch buffer |
+| `Alt+Up/Down` | Move line up / down |
+| `Alt+Left/Right` | Switch buffer |
 | `Alt+1..9` | Jump to buffer N |
 | `Ctrl+Shift+P` | Command Palette |
 | `Ctrl+\`` | Toggle terminal |
@@ -102,7 +102,7 @@ soyabean_gui [FILE...]
 
 ---
 
-## 📦 Downloads
+## Downloads
 
 Latest release: **[v1.0.0](https://github.com/zenformality/soyabean/releases/tag/v1.0.0)**
 
@@ -118,7 +118,7 @@ All artifacts include `sha256.sum` for verification.
 
 ---
 
-## 🏗️ Build from Source
+## Build from Source
 
 ```bash
 # Prerequisites: Rust 1.97+, Git
@@ -136,7 +136,7 @@ Binaries land in `target/release/`.
 
 ---
 
-## 🏛️ Architecture
+## Architecture
 
 ~2,500 lines across modules:
 
@@ -157,12 +157,12 @@ Binaries land in `target/release/`.
 
 ---
 
-## 📄 License
+## License
 
 MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
 <div align="center">
-<sub>Built with ❤️ in Rust · Powered by egui · Inspired by Zed & VS Code</sub>
+<sub>Built with Rust · Powered by egui · Inspired by Zed & VS Code</sub>
 </div>
