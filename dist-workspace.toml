@@ -17,3 +17,5 @@ cargo-dist-version = "0.32.0"
 nsis = true
 # Enable AppImage on Linux
 appimage = true
+# System packages per target
+packages = { "x86_64-unknown-linux-gnu" = ["libasound2-dev"] }
