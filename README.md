@@ -1,25 +1,42 @@
 <div align="center">
 
-# soyabean
+# · · · soyabean · · ·
 
 ![soyabean logo](logo.png)
 
-A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rust.
+*( ≖‿≖)* a minimal yet powerful **terminal code IDE** with integrated GUI, written in Rust!
 
-[![GitHub release](https://img.shields.io/github/v/release/zenformality/soyabean?style=for-the-badge&label=version&color=2ea44f)](https://github.com/zenformality/soyabean/releases/latest)
-[![GitHub License](https://img.shields.io/github/license/zenformality/soyabean?style=for-the-badge&color=555)](LICENSE)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/zenformality/soyabean/release.yml?style=for-the-badge&label=build)](https://github.com/zenformality/soyabean/actions/workflows/release.yml)
-![Rust](https://shields.io)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](#downloads)
-[![Lines of Code](https://img.shields.io/tokei/lines/github/zenformality/soyabean?style=for-the-badge&color=informational)](src)
+<br>
+
+<div style="display: inline-block; background: #2ea44f; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+(◕‿◕) v1.0.1
+</div>
+
+<div style="display: inline-block; background: #555; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+( ≖‿≖) MIT License
+</div>
+
+<div style="display: inline-block; background: #555; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+( ◕‿◕) Rust
+</div>
+
+<div style="display: inline-block; background: #ccc; color: #333; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+(๑❛ᴗ❛๑) Win · Linux · macOS
+</div>
 
 </div>
 
 ---
 
-## Quick Start
+<br>
 
-### Installation
+<div align="center">
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ ✧･ﾟ: *✧･ﾟ
+</div>
+
+## ☆.。.:*・°☆.。.:*・° Quick Start °・.。.:*☆.。.:*・°
+
+### Installation ٩(◕‿◕｡)۶
 
 | Platform | Method |
 |----------|--------|
@@ -28,7 +45,7 @@ A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rus
 | **macOS** | Build from source (see below) |
 | **From Source** | `cargo install --git https://github.com/zenformality/soyabean` |
 
-### Run
+### Run ( ≖‿≖)
 
 ```bash
 # TUI version
@@ -40,9 +57,9 @@ soyabean_gui [FILE...]
 
 ---
 
-## Features
+## ✧･ﾟ: *✧･ﾟ Features ✧･ﾟ: *✧･ﾟ
 
-### Modern GUI (`soyabean_gui`)
+### Modern GUI `soyabean_gui` (◕‿◕✿)
 - **VS Code-style file explorer** with drag & drop, context menus (New File/Folder, Rename, Delete, Reveal)
 - **Integrated terminal** (PowerShell on Windows) with OSC 7 cwd tracking and command history
 - **Tabbed editing** with file-type icons, current-line highlight, configurable cursor blink
@@ -51,7 +68,7 @@ soyabean_gui [FILE...]
 - **Breadcrumbs** navigation bar
 - **Status bar** with mode, encoding, cursor position, git branch
 
-### Core Editing (TUI + GUI)
+### Core Editing (TUI + GUI) ( ≖‿≖)
 - **Syntax highlighting** for 30+ languages (Rust, C/C++, Python, JS/TS, Go, Java, JSON, TOML, YAML, HTML, CSS, Shell, etc.) with multi-line block comments
 - **Fuzzy file finder** (`Ctrl+P`) with smart scoring (filename + word-boundary bonuses)
 - **Multiple buffers** with instant switching (`Alt+Left/Right`, `Alt+1..9`)
@@ -60,17 +77,17 @@ soyabean_gui [FILE...]
 - **Selections**: mouse drag, `Shift`+movement; copy/cut/paste with system clipboard mirroring
 - **Smart editing**: auto-indent on Enter, extra indent after `{ ( [ :`, tab-aware Backspace, block indent/dedent, duplicate/move/delete line, word selection
 
-### Mouse & Unicode
+### Mouse & Unicode (◕‿◕✿)
 - Click to place cursor, drag to select, wheel to scroll
 - Unicode-aware (wide chars, tabs), CRLF/LF detection + preservation
 - Line numbers, current-line highlight, smart Home key
 
-### File & Media
+### File & Media ٩(๑❛ᴗ❛๑)۶
 - **Image preview** (PNG/JPG/GIF/BMP/WebP/ICO/TIFF) scaled to fit
 - **Audio playback** (MP3/WAV/OGG/FLAC/M4A) with play/pause/stop and volume
 - **Drag & drop** in file tree to move files/folders
 
-### Integrated Terminal (GUI)
+### Integrated Terminal (GUI) (ﾉ◕ヮ◕)ﾉ
 - PowerShell (Windows) / `$SHELL` (Linux/macOS)
 - OSC 7 cwd tracking — terminal updates sidebar on `cd`
 - Command bar with cwd display, history (Up/Down), Enter/Run to execute
@@ -78,7 +95,7 @@ soyabean_gui [FILE...]
 
 ---
 
-## Keybindings
+## .。.:*・°☆.。.:*・° Keybindings ☆.。.:*・°☆.。.:*・°
 
 | Key | Action |
 |-----|--------|
@@ -102,7 +119,7 @@ soyabean_gui [FILE...]
 
 ---
 
-## Downloads
+## (◕‿◕✿) Downloads (◕‿◕✿)
 
 Latest release: **[v1.0.1](https://github.com/zenformality/soyabean/releases/tag/v1.0.1)**
 
@@ -114,11 +131,11 @@ Latest release: **[v1.0.1](https://github.com/zenformality/soyabean/releases/tag
 | Linux (tarball) | `soyabean-1.0.1-x86_64.tar.xz` | `*.sha256` |
 | Source | `source.tar.gz` | `*.sha256` |
 
-All artifacts include `sha256.sum` for verification.
+All artifacts include `sha256.sum` for verification. ٩(◕‿◕｡)۶
 
 ---
 
-## Build from Source
+## °˖✧ Build from Source ˖°✧
 
 ```bash
 # Prerequisites: Rust 1.97+, Git
@@ -132,11 +149,11 @@ cargo build --release --bin soyabean
 cargo build --release --bin soyabean_gui
 ```
 
-Binaries land in `target/release/`.
+Binaries land in `target/release/`. (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧
 
 ---
 
-## Architecture
+## ˗ˏˋ ♡ ˎˊ˗ Architecture ˗ˏˋ ♡ ˎˊ˗
 
 ~2,500 lines across modules:
 
@@ -157,12 +174,27 @@ Binaries land in `target/release/`.
 
 ---
 
-## License
+## License (◕‿◕✿)
 
 MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
+## Credits (◕‿◕✿)
+
+Made with (◕‿◕✿) by **[zenformality](https://github.com/zenformality)**
+
+<img src="https://github.com/zenformality.png" width="80" alt="zenformality">
+
+---
+
 <div align="center">
-<sub>Built with Rust · Powered by egui · Inspired by Zed & VS Code</sub>
+<sub>Built with Rust · Powered by egui</sub>
+</div>
+
+<div align="center">
+<br>
+( ≖‿≖) ✧ thank you for stopping by! ✧ ( ◕‿◕)
+<br>
+<br>
 </div>
