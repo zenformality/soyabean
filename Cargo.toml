@@ -1,0 +1,40 @@
+[package]
+name = "soyabean"
+version = "1.0.0"
+edition = "2021"
+description = "A minimal yet powerful terminal code IDE"
+license = "MIT"
+repository = "https://github.com/zenformality/soyabean"
+homepage = "https://github.com/zenformality/soyabean"
+keywords = ["editor", "ide", "terminal", "gui"]
+categories = ["command-line-utilities", "development-tools"]
+readme = "README.md"
+autobins = false
+
+[workspace]
+
+[dependencies]
+crossterm = { version = "0.28", features = ["bracketed-paste"] }
+unicode-width = "0.2"
+eframe = "0.29"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "webp", "ico", "tiff", "pnm"] }
+portable-pty = "0.9"
+rodio = "0.20"
+
+[[bin]]
+name = "soyabean"
+path = "src/main.rs"
+
+[[bin]]
+name = "soyabean_gui"
+path = "src/bin/soyabean_gui.rs"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 3
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

@@ -1,0 +1,26 @@
+[workspace]
+members = ["cargo:."]
+
+# Config for 'dist'
+[dist]
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = []
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-pc-windows-msvc", "x86_64-unknown-linux-gnu"]
+# Where to host releases
+hosting = "github"
+# Version of cargo-dist used to generate this config
+cargo-dist-version = "0.32.0"
+# Enable NSIS installer on Windows
+nsis = true
+# Enable AppImage on Linux
+appimage = true
+# System packages per target
+packages = { "x86_64-unknown-linux-gnu" = ["libasound2-dev"] }
+# Allow dirty working directory for CI
+allow-dirty = ["ci"]
+# Icons for installers
+app-icon = "assets/soyabean-512.png"      # AppImage (Linux)
+windows-icon = "assets/soyabean.ico"      # NSIS installer (Windows)
