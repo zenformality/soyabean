@@ -186,10 +186,6 @@ impl Terminal {
         }
     }
 
-    pub fn is_exited(&self) -> bool {
-        self.exited
-    }
-
     fn resize(&mut self, cols: usize, rows: usize) {
         let cols = cols.max(2);
         let rows = rows.max(2);

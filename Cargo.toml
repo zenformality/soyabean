@@ -1,6 +1,6 @@
 [package]
 name = "soyabean"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "A minimal yet powerful terminal code IDE"
 license = "MIT"
@@ -20,6 +20,7 @@ eframe = "0.29"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp", "webp", "ico", "tiff", "pnm"] }
 portable-pty = "0.9"
 rodio = "0.20"
+rfd = "0.17.2"
 
 [[bin]]
 name = "soyabean"

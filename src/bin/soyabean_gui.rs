@@ -14,6 +14,7 @@ use std::time::Duration;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use eframe::egui::{self, FontId, Margin, RichText, Rounding, Stroke, Vec2};
+use rfd::FileDialog;
 use soyabean::buffer::visual_col;
 use soyabean::editor::{self, Editor, Mode};
 
@@ -72,6 +73,7 @@ struct GuiApp {
     media_path: Option<PathBuf>,
     img_cache: media_view::ImgCache,
     audio_player: media_view::AudioPlayer,
+    ctrl_k_pressed: bool,
 }
 
 impl GuiApp {
@@ -108,6 +110,7 @@ impl GuiApp {
             media_path: None,
             img_cache: std::collections::HashMap::new(),
             audio_player: media_view::AudioPlayer::new(),
+            ctrl_k_pressed: false,
         }
     }
 
@@ -280,6 +283,29 @@ impl GuiApp {
                     }
                     if ctrl && *key == egui::Key::P && modifiers.shift {
                         self.open_palette();
+                        continue;
+                    }
+                    if ctrl && *key == egui::Key::K {
+                        self.ctrl_k_pressed = true;
+                        continue;
+                    }
+                    if self.ctrl_k_pressed {
+                        if ctrl && *key == egui::Key::O {
+                            self.open_folder_dialog();
+                            self.ctrl_k_pressed = false;
+                            continue;
+                        }
+                        self.ctrl_k_pressed = false;
+                    }
+                    if ctrl && *key == egui::Key::O {
+                        self.open_file_dialog();
+                        continue;
+                    }
+                    if ctrl && *key == egui::Key::R {
+                        if modifiers.shift {
+                            self.tree.refresh(&self.ed.root);
+                            self.ed.msg("File tree refreshed");
+                        }
                         continue;
                     }
                     if ctrl && *key == egui::Key::Backtick {
@@ -526,175 +552,359 @@ impl GuiApp {
         let mk = |label: &str| RichText::new(label).size(12.5).color(p.fg);
 
         egui::menu::bar(ui, |ui| {
-            ui.menu_button(mk("File"), |ui| {
-                ui.set_min_width(230.0);
-                if ui.button("Open File…\tCtrl+P").clicked() {
-                    self.send_key(KeyCode::Char('p'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("New Buffer\tCtrl+N").clicked() {
-                    self.send_key(KeyCode::Char('n'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("New File in Directory…").clicked() {
-                    self.tree.pending_action = Some(file_tree::FileAction::NewFile {
-                        parent: self.ed.root.clone(),
-                        input: String::new(),
-                    });
-                    ui.close_menu();
-                }
-                if ui.button("New Folder in Directory…").clicked() {
-                    self.tree.pending_action = Some(file_tree::FileAction::NewFolder {
-                        parent: self.ed.root.clone(),
-                        input: String::new(),
-                    });
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Save\tCtrl+S").clicked() {
-                    self.send_key(KeyCode::Char('s'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Save As…\tCtrl+Shift+S").clicked() {
-                    self.ed.input.clear();
-                    self.ed.mode = Mode::SaveAs;
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Close Buffer\tCtrl+W").clicked() {
-                    self.send_key(KeyCode::Char('w'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Exit").clicked() {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                }
-            });
+            ui.menu_button(mk("File"), |ui| self.show_file_menu(ui, ctx));
+            ui.menu_button(mk("Edit"), |ui| self.show_edit_menu(ui, ctx));
+            ui.menu_button(mk("Selection"), |ui| self.show_selection_menu(ui, ctx));
+            ui.menu_button(mk("View"), |ui| self.show_view_menu(ui));
+            ui.menu_button(mk("Go"), |ui| self.show_go_menu(ui, ctx));
+            ui.menu_button(mk("Run"), |ui| self.show_run_menu(ui, ctx));
+            ui.menu_button(mk("Window"), |ui| self.show_window_menu(ui, ctx));
+            ui.menu_button(mk("Help"), |ui| self.show_help_menu(ui));
 
-            ui.menu_button(mk("Edit"), |ui| {
-                ui.set_min_width(230.0);
-                if ui.button("Undo\tCtrl+Z").clicked() {
-                    self.send_key(KeyCode::Char('z'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Redo\tCtrl+Y").clicked() {
-                    self.send_key(KeyCode::Char('y'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Cut").clicked() {
-                    self.do_copy(ctx, true);
-                    ui.close_menu();
-                }
-                if ui.button("Copy").clicked() {
-                    self.do_copy(ctx, false);
-                    ui.close_menu();
-                }
-                if ui.button("Paste").clicked() {
-                    let t = self.ed.clipboard_text().to_string();
-                    if t.is_empty() {
-                        self.ed.msg("Clipboard is empty");
-                    } else {
-                        self.ed.on_paste(&t);
-                    }
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Find…\tCtrl+F").clicked() {
-                    self.send_key(KeyCode::Char('f'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Find & Replace…\tCtrl+H").clicked() {
-                    self.send_key(KeyCode::Char('h'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Go to Line…\tCtrl+G").clicked() {
-                    self.send_key(KeyCode::Char('g'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Toggle Line Comment\tCtrl+/").clicked() {
-                    self.send_key(KeyCode::Char('/'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Duplicate Line\tCtrl+D").clicked() {
-                    self.send_key(KeyCode::Char('d'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Delete Line\tCtrl+K").clicked() {
-                    self.send_key(KeyCode::Char('k'), KeyModifiers::CONTROL);
-                    ui.close_menu();
-                }
-                if ui.button("Move Line Up\tAlt+↑").clicked() {
-                    self.send_key(KeyCode::Up, KeyModifiers::ALT);
-                    ui.close_menu();
-                }
-                if ui.button("Move Line Down\tAlt+↓").clicked() {
-                    self.send_key(KeyCode::Down, KeyModifiers::ALT);
-                    ui.close_menu();
-                }
-            });
+            ui.add_space(12.0);
 
-            ui.menu_button(mk("View"), |ui| {
-                ui.set_min_width(200.0);
-                if ui.button("Command Palette\tCtrl+Shift+P").clicked() {
-                    self.open_palette();
-                    ui.close_menu();
-                }
-                if ui.button("Zoom In\tCtrl+Plus").clicked() {
-                    self.font_scale = (self.font_scale * 1.15).clamp(0.6, 2.5);
-                    ui.close_menu();
-                }
-                if ui.button("Zoom Out\tCtrl+Minus").clicked() {
-                    self.font_scale = (self.font_scale / 1.15).clamp(0.6, 2.5);
-                    ui.close_menu();
-                }
-                if ui.button("Reset Zoom\tCtrl+0").clicked() {
-                    self.font_scale = 1.0;
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui.button("Toggle Theme").clicked() {
-                    self.theme = match self.theme {
-                        Theme::Dark => Theme::Light,
-                        Theme::Light => Theme::TokyoNight,
-                        Theme::TokyoNight => Theme::Dark,
-                    };
-                    ui.close_menu();
-                }
-                if ui.button("Refresh File Tree").clicked() {
-                    let root = self.ed.root.clone();
-                    self.tree.refresh(&root);
-                    ui.close_menu();
-                }
-                if ui.button("Welcome Screen").clicked() {
-                    self.show_welcome = true;
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button(mk("Terminal"), |ui| {
-                if ui.button("Toggle Integrated Terminal\tCtrl+`").clicked() {
-                    self.show_terminal = !self.show_terminal;
-                    ui.close_menu();
-                }
-                if ui.button("Open OS Terminal Window").clicked() {
-                    launch_terminal();
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button(mk("Help"), |ui| {
-                if ui.button("Shortcuts\tF1").clicked() {
-                    self.show_shortcuts = true;
-                    ui.close_menu();
-                }
-                if ui.button("About soyabean").clicked() {
-                    self.show_about = true;
-                    ui.close_menu();
-                }
-            });
+            let project_name = self
+                .ed
+                .root
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| self.ed.root.display().to_string());
+            ui.label(
+                RichText::new(project_name)
+                    .size(12.5)
+                    .color(p.fg)
+                    .strong(),
+            );
         });
+    }
+
+    fn show_file_menu(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        let p = self.theme.palette();
+        ui.set_min_width(240.0);
+        if ui.button("New Window\tCtrl-Shift-N").clicked() {
+            self.spawn_new_window();
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Open File...\tCtrl-O").clicked() {
+            self.open_file_dialog();
+            ui.close_menu();
+        }
+        if ui.button("Open Folder...\tCtrl-K Ctrl-O").clicked() {
+            self.open_folder_dialog();
+            ui.close_menu();
+        }
+        ui.menu_button("Open Recent...\tCtrl-R", |ui| {
+            ui.set_min_width(220.0);
+            if self.recent_files.is_empty() {
+                ui.label(RichText::new("No recent files").color(p.text_dim));
+            } else {
+                for path in &self.recent_files.clone() {
+                    let name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_default();
+                    if ui.button(name).clicked() {
+                        self.track_recent(path.clone());
+                        self.open_path(path.clone());
+                        ui.close_menu();
+                    }
+                }
+            }
+        });
+        if ui.button("Open Remote...\tCtrl-Alt-Shift-O").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Add Folder to Project...").clicked() {
+            self.add_folder_to_project();
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Save\tCtrl-S").clicked() {
+            self.send_key(KeyCode::Char('s'), KeyModifiers::CONTROL);
+            ui.close_menu();
+        }
+        if ui.button("Save As...\tCtrl-Shift-S").clicked() {
+            self.ed.input.clear();
+            self.ed.mode = Mode::SaveAs;
+            ui.close_menu();
+        }
+        if ui.button("Save All\tCtrl-K S").clicked() {
+            self.save_all();
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Close Editor").clicked() {
+            self.close_current_buffer();
+            ui.close_menu();
+        }
+        if ui.button("Close Project").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Close Window\tAlt-F4").clicked() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            ui.close_menu();
+        }
+    }
+
+    fn show_edit_menu(&mut self, ui: &mut egui::Ui, _ctx: &egui::Context) {
+        ui.set_min_width(220.0);
+        if ui.button("Undo\tCtrl-Z").clicked() {
+            self.send_key(KeyCode::Char('z'), KeyModifiers::CONTROL);
+            ui.close_menu();
+        }
+        if ui.button("Redo\tCtrl-Shift-Z").clicked() {
+            self.send_key(KeyCode::Char('z'), KeyModifiers::CONTROL | KeyModifiers::SHIFT);
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Cut\tCtrl-X").clicked() {
+            self.do_copy(ui.ctx(), true);
+            ui.close_menu();
+        }
+        if ui.button("Copy\tCtrl-C").clicked() {
+            self.do_copy(ui.ctx(), false);
+            ui.close_menu();
+        }
+        if ui.button("Copy and Trim").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Paste\tCtrl-V").clicked() {
+            let t = self.ed.clipboard_text().to_string();
+            if !t.is_empty() {
+                self.ed.on_paste(&t);
+            }
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Find\tCtrl-Shift-F").clicked() {
+            self.send_key(KeyCode::Char('f'), KeyModifiers::CONTROL | KeyModifiers::SHIFT);
+            ui.close_menu();
+        }
+        if ui.button("Find in Project\tCtrl-Shift-F").clicked() {
+            self.send_key(KeyCode::Char('f'), KeyModifiers::CONTROL | KeyModifiers::SHIFT);
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Toggle Line Comment\tCtrl-/").clicked() {
+            self.send_key(KeyCode::Char('/'), KeyModifiers::CONTROL);
+            ui.close_menu();
+        }
+    }
+
+    fn show_selection_menu(&mut self, ui: &mut egui::Ui, _ctx: &egui::Context) {
+        ui.set_min_width(200.0);
+        ui.label(RichText::new("Selection options").color(_ctx.style().visuals.text_color()));
+    }
+
+    fn show_view_menu(&mut self, ui: &mut egui::Ui) {
+        ui.set_min_width(240.0);
+        if ui.button("Zoom In\tCtrl-Shift-=").clicked() {
+            self.font_scale = (self.font_scale * 1.15).clamp(0.6, 2.5);
+            ui.close_menu();
+        }
+        if ui.button("Zoom Out\tCtrl--").clicked() {
+            self.font_scale = (self.font_scale / 1.15).clamp(0.6, 2.5);
+            ui.close_menu();
+        }
+        if ui.button("Reset Zoom\tCtrl-0").clicked() {
+            self.font_scale = 1.0;
+            ui.close_menu();
+        }
+        if ui.button("Reset All Zoom").clicked() {
+            self.font_scale = 1.0;
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Toggle Left Dock\tCtrl-B").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Toggle Right Dock\tCtrl-Alt-B").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Toggle Bottom Dock\tCtrl-J").clicked() {
+            self.show_terminal = !self.show_terminal;
+            ui.close_menu();
+        }
+        if ui.button("Toggle All Docks\tCtrl-Shift-Y").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Split Up").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Split Down").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Split Left\tCtrl-Shift-5").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Split Right\tCtrl-Shift-5").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Project Panel\tCtrl-Shift-E").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Outline Panel\tCtrl-Shift-B").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Collab Panel\tCtrl-Shift-C").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Terminal Panel\tCtrl-`").clicked() {
+            self.show_terminal = !self.show_terminal;
+            ui.close_menu();
+        }
+        if ui.button("Debugger Panel\tCtrl-Shift-D").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Agent Panel\tCtrl-Shift-/").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Git Panel\tCtrl-Shift-G").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Diagnostics\tCtrl-Shift-M").clicked() {
+            ui.close_menu();
+        }
+    }
+
+    fn show_go_menu(&mut self, ui: &mut egui::Ui, _ctx: &egui::Context) {
+        ui.set_min_width(200.0);
+        if ui.button("Go to File\tCtrl-P").clicked() {
+            self.send_key(KeyCode::Char('p'), KeyModifiers::CONTROL);
+            ui.close_menu();
+        }
+        if ui.button("Go to Symbol in Project\tCtrl-T").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Go to Line...\tCtrl-G").clicked() {
+            self.send_key(KeyCode::Char('g'), KeyModifiers::CONTROL);
+            ui.close_menu();
+        }
+        if ui.button("Go to Definition\tF12").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Go to References\tShift-F12").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Go to Next Problem\tAlt-F8").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Go to Previous Problem\tShift-Alt-F8").clicked() {
+            ui.close_menu();
+        }
+    }
+
+    fn show_run_menu(&mut self, ui: &mut egui::Ui, _ctx: &egui::Context) {
+        ui.set_min_width(200.0);
+        if ui.button("Run Without Debugging\tCtrl-F5").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Run...").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Toggle Breakpoint\tF9").clicked() {
+            ui.close_menu();
+        }
+    }
+
+    fn show_window_menu(&mut self, ui: &mut egui::Ui, _ctx: &egui::Context) {
+        ui.set_min_width(200.0);
+        if ui.button("New Window").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Minimize").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Zoom").clicked() {
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("Bring All to Front").clicked() {
+            ui.close_menu();
+        }
+    }
+
+    fn show_help_menu(&mut self, ui: &mut egui::Ui) {
+        ui.set_min_width(220.0);
+        if ui.button("View Release Notes Locally").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("View Telemetry").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("View Dependency Licenses").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Show Welcome").clicked() {
+            self.show_welcome = true;
+            ui.close_menu();
+        }
+        ui.separator();
+        if ui.button("File Bug Report...").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Request Feature...").clicked() {
+            ui.close_menu();
+        }
+        if ui.button("Email Us...").clicked() {
+            ui.close_menu();
+        }
+    }
+
+    fn open_file_dialog(&mut self) {
+        if let Some(path) = FileDialog::new().add_filter("All Files", &["*"]).pick_file() {
+            self.track_recent(path.clone());
+            self.open_path(path);
+        }
+    }
+
+    fn open_folder_dialog(&mut self) {
+        if let Some(path) = FileDialog::new().pick_folder() {
+            let path_ref = path.clone();
+            self.ed.root = path;
+            self.tree.refresh(&path_ref);
+            self.ed.msg(&format!("Opened folder: {}", path_ref.display()));
+        }
+    }
+
+    fn add_folder_to_project(&mut self) {
+        if let Some(path) = FileDialog::new().pick_folder() {
+            let path_ref = path.clone();
+            self.ed.root = path;
+            self.tree.refresh(&path_ref);
+            self.ed.msg(&format!("Added folder: {}", path_ref.display()));
+        }
+    }
+
+    fn save_all(&mut self) {
+        for buf in &mut self.ed.bufs {
+            if buf.dirty {
+                let _ = buf.save();
+            }
+        }
+        self.ed.msg("All files saved");
+    }
+
+    fn close_current_buffer(&mut self) {
+        if self.ed.bufs.len() > 1 {
+            self.close_buffer(self.ed.cur);
+        }
+    }
+
+    fn spawn_new_window(&self) {
+        let exe = std::env::current_exe().unwrap_or_default();
+        let exe_str = exe.to_string_lossy().to_string();
+        let _ = std::process::Command::new(exe_str)
+            .spawn()
+            .map_err(|e| eprintln!("Failed to open new window: {e}"));
     }
 
     // ── toolbar ───────────────────────────────────────────────────────────
@@ -707,104 +917,47 @@ impl GuiApp {
             ui.spacing_mut().item_spacing.x = 4.0;
 
             ui.add_space(4.0);
-            ui.label(
-                RichText::new("🌱 soyabean")
-                    .color(p.accent)
-                    .size(15.0)
-                    .strong(),
-            );
-            ui.add(egui::Separator::default().vertical());
 
-            if icon_btn(ui, "🔍", "Command Palette (Ctrl+Shift+P)", p).clicked() {
+            if icon_btn(ui, "☰", "Menu", p).clicked() {
                 self.open_palette();
             }
 
-            ui.add(egui::Separator::default().vertical());
+            ui.add_space(8.0);
 
-            if icon_btn(ui, "📂", "Open File (Ctrl+P)", p).clicked() {
-                self.send_key(KeyCode::Char('p'), KeyModifiers::CONTROL);
-            }
-            if icon_btn(ui, "💾", "Save (Ctrl+S)", p).clicked() {
-                self.send_key(KeyCode::Char('s'), KeyModifiers::CONTROL);
-            }
-            if icon_btn(ui, "📄+", "New Buffer (Ctrl+N)", p).clicked() {
-                self.send_key(KeyCode::Char('n'), KeyModifiers::CONTROL);
-            }
-            if icon_btn(ui, "✕", "Close Buffer (Ctrl+W)", p).clicked() {
-                self.send_key(KeyCode::Char('w'), KeyModifiers::CONTROL);
-            }
-
-            ui.add(egui::Separator::default().vertical());
-
-            if icon_btn(ui, "⟲", "Undo (Ctrl+Z)", p).clicked() {
-                self.send_key(KeyCode::Char('z'), KeyModifiers::CONTROL);
-            }
-            if icon_btn(ui, "⟳", "Redo (Ctrl+Y)", p).clicked() {
-                self.send_key(KeyCode::Char('y'), KeyModifiers::CONTROL);
-            }
-
-            ui.add(egui::Separator::default().vertical());
-
-            if icon_btn(ui, "🔎", "Find (Ctrl+F)", p).clicked() {
-                self.send_key(KeyCode::Char('f'), KeyModifiers::CONTROL);
-            }
-            if icon_btn(ui, "⇄", "Find & Replace (Ctrl+H)", p).clicked() {
-                self.send_key(KeyCode::Char('h'), KeyModifiers::CONTROL);
-            }
-
-            ui.add(egui::Separator::default().vertical());
-
-            let term_lbl = if self.show_terminal {
-                "🖥  Terminal ✓"
-            } else {
-                "🖥  Terminal"
-            };
-            if ui
-                .add(
-                    egui::Button::new(RichText::new(term_lbl).size(12.0).color(p.fg)).fill(
-                        if self.show_terminal {
-                            p.button_hover
-                        } else {
-                            p.button_bg
-                        },
-                    ),
-                )
-                .on_hover_text("Toggle Integrated Terminal (Ctrl+`)")
-                .clicked()
-            {
-                self.show_terminal = !self.show_terminal;
-            }
-
-            ui.add(egui::Separator::default().vertical());
-
-            let theme_lbl = match self.theme {
-                Theme::Dark => "🌙 Dark",
-                Theme::Light => "☀ Light",
-                Theme::TokyoNight => "🌌 Tokyo",
-            };
-            if ui
-                .add(egui::Button::new(
-                    RichText::new(theme_lbl).size(12.0).color(p.fg),
-                ))
-                .on_hover_text("Switch Theme (Dark / Light / Tokyo Night)")
-                .clicked()
-            {
-                self.theme = match self.theme {
-                    Theme::Dark => Theme::Light,
-                    Theme::Light => Theme::TokyoNight,
-                    Theme::TokyoNight => Theme::Dark,
-                };
-            }
+            let project_name = self
+                .ed
+                .root
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| "soyabean".to_string());
+            ui.label(
+                RichText::new(format!("📁 {}", project_name))
+                    .color(p.fg)
+                    .size(13.0),
+            );
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if icon_btn(ui, "🏠", "Welcome Screen", p).clicked() {
-                    self.show_welcome = true;
+                if icon_btn(ui, "🔍", "Command Palette (Ctrl+Shift+P)", p).clicked() {
+                    self.open_palette();
                 }
-                if icon_btn(ui, "ℹ", "About soyabean", p).clicked() {
-                    self.show_about = true;
+                if icon_btn(ui, "📂", "Open File (Ctrl+P)", p).clicked() {
+                    self.send_key(KeyCode::Char('p'), KeyModifiers::CONTROL);
                 }
-                if icon_btn(ui, "⌨", "Shortcuts (F1)", p).clicked() {
-                    self.show_shortcuts = true;
+                if icon_btn(ui, "💾", "Save (Ctrl+S)", p).clicked() {
+                    self.send_key(KeyCode::Char('s'), KeyModifiers::CONTROL);
+                }
+                let theme_lbl = match self.theme {
+                    Theme::Dark => "🌙",
+                    Theme::Light => "☀",
+                    Theme::TokyoNight => "🌌",
+                };
+                if icon_btn(ui, theme_lbl, "Switch Theme", p).clicked() {
+                    self.theme = match self.theme {
+                        Theme::Dark => Theme::Light,
+                        Theme::Light => Theme::TokyoNight,
+                        Theme::TokyoNight => Theme::Dark,
+                    };
                 }
             });
         });
@@ -1441,7 +1594,7 @@ impl GuiApp {
                             .color(p.accent),
                     );
                     ui.label(
-                        RichText::new("v1.0.0 Modernized Edition")
+                        RichText::new("v1.0.1 Modernized Edition")
                             .size(12.0)
                             .color(p.text_dim),
                     );
@@ -1653,115 +1806,110 @@ impl eframe::App for GuiApp {
                 .frame(
                     egui::Frame::none()
                         .fill(p.panel_bg)
-                        .inner_margin(Margin::symmetric(6.0, 4.0))
+                        .inner_margin(Margin::symmetric(0.0, 0.0))
                         .stroke(Stroke::new(1.0_f32, p.border)),
                 )
                 .show(ctx, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("TERMINAL").size(11.0).color(p.text_dim));
-                        if let Some(t) = &self.terminal {
-                            ui.label(RichText::new(&t.title).size(11.0).color(p.text_dim));
-                        }
-                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.add_space(8.0);
+                            let term_title = self.terminal.as_ref().map(|t| t.title.clone()).unwrap_or_default();
+                            if term_title.is_empty() {
+                                ui.label(RichText::new("Terminal").size(12.0).color(p.fg));
+                            } else {
+                                ui.label(RichText::new(format!("soyabean — {}", term_title)).size(12.0).color(p.fg));
+                            }
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                if ui.small_button("✕").clicked() {
+                                    if let Some(t) = &mut self.terminal {
+                                        t.kill();
+                                    }
+                                    self.terminal = None;
+                                    self.show_terminal = false;
+                                    self.term_input_focused = false;
+                                }
+                            });
+                        });
+                        ui.add_space(4.0);
+                        ui.separator();
+
+                        // ── Command bar: cwd + command input ─────────────────
+                        let cwd = self.terminal.as_ref().map(|t| t.cwd.display().to_string());
+                        let mut submit = false;
+                        let mut recall_at_end = false;
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("❯").size(15.0).color(p.accent));
+                            if let Some(c) = &cwd {
+                                ui.add_sized(
+                                    Vec2::new(240.0, 18.0),
+                                    egui::Label::new(RichText::new(c).size(11.5).color(p.text_dim))
+                                        .truncate(),
+                                )
+                                .on_hover_text(c);
+                            }
+                            if self.term_input_focused {
+                                let up = ui.input(|i| i.key_pressed(egui::Key::ArrowUp));
+                                let down = ui.input(|i| i.key_pressed(egui::Key::ArrowDown));
+                                if up {
+                                    self.recall_cmd(-1);
+                                    recall_at_end = true;
+                                } else if down {
+                                    self.recall_cmd(1);
+                                    recall_at_end = true;
+                                }
+                            }
+                            let edit_w = (ui.available_width() - 30.0).max(80.0);
+                            let resp = ui.add_sized(
+                                Vec2::new(edit_w, 20.0),
+                                egui::TextEdit::singleline(&mut self.cmd_input)
+                                    .font(egui::TextStyle::Monospace)
+                                    .hint_text("Type a command… (Enter to run)")
+                                    .cursor_at_end(recall_at_end),
+                            );
+                            self.term_input_focused = resp.has_focus();
+                            if resp.has_focus() {
+                                if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                                    submit = true;
+                                }
+                                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                                    ui.memory_mut(|m| {
+                                        m.request_focus(egui::Id::new("soyabean-terminal"))
+                                    });
+                                }
+                                if ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Copy)))
+                                {
+                                    self.cmd_input.clear();
+                                }
+                            }
                             if ui
-                                .small_button("✕")
-                                .on_hover_text("Close terminal")
+                                .add(
+                                    egui::Button::new(RichText::new("▶").size(13.0))
+                                        .min_size(Vec2::new(24.0, 20.0)),
+                                )
                                 .clicked()
                             {
-                                if let Some(t) = &mut self.terminal {
-                                    t.kill();
-                                }
-                                self.terminal = None;
-                                self.show_terminal = false;
-                                self.term_input_focused = false;
-                            }
-                        });
-                        if let Some(t) = &self.terminal {
-                            if t.is_exited() {
-                                ui.label(
-                                    RichText::new("process exited").size(11.0).color(p.text_dim),
-                                );
-                            }
-                        }
-                    });
-                    ui.separator();
-
-                    // ── Command bar: cwd + command input ─────────────────
-                    let cwd = self.terminal.as_ref().map(|t| t.cwd.display().to_string());
-                    let mut submit = false;
-                    let mut recall_at_end = false;
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("❯").size(15.0).color(p.accent));
-                        if let Some(c) = &cwd {
-                            ui.add_sized(
-                                Vec2::new(240.0, 18.0),
-                                egui::Label::new(RichText::new(c).size(11.5).color(p.text_dim))
-                                    .truncate(),
-                            )
-                            .on_hover_text(c);
-                        }
-                        if self.term_input_focused {
-                            let up = ui.input(|i| i.key_pressed(egui::Key::ArrowUp));
-                            let down = ui.input(|i| i.key_pressed(egui::Key::ArrowDown));
-                            if up {
-                                self.recall_cmd(-1);
-                                recall_at_end = true;
-                            } else if down {
-                                self.recall_cmd(1);
-                                recall_at_end = true;
-                            }
-                        }
-                        let edit_w = (ui.available_width() - 30.0).max(80.0);
-                        let resp = ui.add_sized(
-                            Vec2::new(edit_w, 20.0),
-                            egui::TextEdit::singleline(&mut self.cmd_input)
-                                .font(egui::TextStyle::Monospace)
-                                .hint_text("Type a command… (Enter to run)")
-                                .cursor_at_end(recall_at_end),
-                        );
-                        self.term_input_focused = resp.has_focus();
-                        if resp.has_focus() {
-                            if ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                                 submit = true;
                             }
-                            if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                                ui.memory_mut(|m| {
-                                    m.request_focus(egui::Id::new("soyabean-terminal"))
-                                });
-                            }
-                            if ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Copy)))
-                            {
+                        });
+                        if submit {
+                            let cmd = self.cmd_input.trim().to_string();
+                            if !cmd.is_empty() {
+                                let mut line = cmd.clone();
+                                line.push('\r');
+                                line.push('\n');
+                                if let Some(t) = &mut self.terminal {
+                                    t.write(line.as_bytes());
+                                }
+                                self.cmd_history.push(cmd);
+                                self.cmd_history_idx = self.cmd_history.len();
                                 self.cmd_input.clear();
                             }
                         }
-                        if ui
-                            .add(
-                                egui::Button::new(RichText::new("▶").size(13.0))
-                                    .min_size(Vec2::new(24.0, 20.0)),
-                            )
-                            .clicked()
-                        {
-                            submit = true;
+                        ui.separator();
+                        if let Some(t) = &mut self.terminal {
+                            t.show(ui, p);
                         }
                     });
-                    if submit {
-                        let cmd = self.cmd_input.trim().to_string();
-                        if !cmd.is_empty() {
-                            let mut line = cmd.clone();
-                            line.push('\r');
-                            line.push('\n');
-                            if let Some(t) = &mut self.terminal {
-                                t.write(line.as_bytes());
-                            }
-                            self.cmd_history.push(cmd);
-                            self.cmd_history_idx = self.cmd_history.len();
-                            self.cmd_input.clear();
-                        }
-                    }
-                    ui.separator();
-                    if let Some(t) = &mut self.terminal {
-                        t.show(ui, p);
-                    }
                 });
         }
 
@@ -2036,27 +2184,27 @@ fn install_fonts(ctx: &egui::Context) {
 fn file_icon(name: &str) -> &'static str {
     let ext = name.rsplit('.').next().unwrap_or("");
     match ext {
-        "rs" => "🦀",
-        "toml" => "⚙",
-        "md" => "📝",
-        "txt" => "📄",
-        "json" => "📊",
-        "js" | "jsx" | "mjs" | "cjs" => "🟨",
-        "ts" | "tsx" => "🔷",
-        "py" | "pyw" => "🐍",
-        "c" | "h" => "©",
-        "cpp" | "cc" | "cxx" | "hpp" => "➕",
-        "go" => "🐹",
-        "java" => "☕",
-        "html" | "htm" => "🌐",
-        "css" | "scss" | "less" => "🎨",
-        "png" | "jpg" | "jpeg" | "gif" | "svg" | "ico" => "🖼",
-        "xml" | "yml" | "yaml" => "📋",
-        "sh" | "bash" | "zsh" | "fish" => "🐚",
-        "lock" => "🔒",
-        "mp3" | "wav" | "ogg" | "flac" | "m4a" => "🎵",
-        "mp4" | "webm" | "avi" | "mkv" => "🎬",
-        _ => "📄",
+        "rs" => "[R]",
+        "toml" => "[T]",
+        "md" => "[M]",
+        "txt" => "[T]",
+        "json" => "[J]",
+        "js" | "jsx" | "mjs" | "cjs" => "[JS]",
+        "ts" | "tsx" => "[TS]",
+        "py" | "pyw" => "[PY]",
+        "c" | "h" => "[C]",
+        "cpp" | "cc" | "cxx" | "hpp" => "[C++]",
+        "go" => "[GO]",
+        "java" => "[JV]",
+        "html" | "htm" => "[H]",
+        "css" | "scss" | "less" => "[CSS]",
+        "png" | "jpg" | "jpeg" | "gif" | "svg" | "ico" => "[IMG]",
+        "xml" | "yml" | "yaml" => "[Y]",
+        "sh" | "bash" | "zsh" | "fish" => "[$]",
+        "lock" => "[L]",
+        "mp3" | "wav" | "ogg" | "flac" | "m4a" => "[A]",
+        "mp4" | "webm" | "avi" | "mkv" => "[V]",
+        _ => "[F]",
     }
 }
 

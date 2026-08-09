@@ -23,8 +23,8 @@ A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rus
 
 | Platform | Method |
 |----------|--------|
-| **Windows** | Download `soyabean-1.0.0-x64-setup.exe` from [Releases](https://github.com/zenformality/soyabean/releases/latest) and run the installer |
-| **Linux** | Download `soyabean-1.0.0-x86_64.AppImage`, make executable, and run |
+| **Windows** | Download `soyabean-1.0.1-x64-setup.exe` from [Releases](https://github.com/zenformality/soyabean/releases/latest) and run the installer |
+| **Linux** | Download `soyabean-1.0.1-x86_64.AppImage`, make executable, and run |
 | **macOS** | Build from source (see below) |
 | **From Source** | `cargo install --git https://github.com/zenformality/soyabean` |
 
@@ -104,14 +104,14 @@ soyabean_gui [FILE...]
 
 ## Downloads
 
-Latest release: **[v1.0.0](https://github.com/zenformality/soyabean/releases/tag/v1.0.0)**
+Latest release: **[v1.0.1](https://github.com/zenformality/soyabean/releases/tag/v1.0.1)**
 
 | Platform | Artifact | SHA256 |
 |----------|----------|--------|
-| Windows (installer) | `soyabean-1.0.0-x86_64-setup.exe` | `*.sha256` |
-| Windows (portable) | `soyabean-1.0.0-x86_64.zip` | `*.sha256` |
-| Linux (AppImage) | `soyabean-1.0.0-x86_64.AppImage` | `*.sha256` |
-| Linux (tarball) | `soyabean-1.0.0-x86_64.tar.xz` | `*.sha256` |
+| Windows (installer) | `soyabean-1.0.1-x86_64-setup.exe` | `*.sha256` |
+| Windows (portable) | `soyabean-1.0.1-x86_64.zip` | `*.sha256` |
+| Linux (AppImage) | `soyabean-1.0.1-x86_64.AppImage` | `*.sha256` |
+| Linux (tarball) | `soyabean-1.0.1-x86_64.tar.xz` | `*.sha256` |
 | Source | `source.tar.gz` | `*.sha256` |
 
 All artifacts include `sha256.sum` for verification.
