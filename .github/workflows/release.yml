@@ -139,10 +139,6 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
-      # Install ALSA headers for rodio/cpal on Linux
-      - name: Install ALSA headers (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
