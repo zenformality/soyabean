@@ -2,7 +2,7 @@
 
 # soyabean
 
-![soyabean logo](assets/soyabean-512.png)
+![soyabean logo](logo.png)
 
 A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rust.
 
