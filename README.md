@@ -1,61 +1,42 @@
 <div align="center">
 
-<!-- Banner Header SVG with Kawaii styling, drop-shadows, and custom gradients -->
-<svg width="100%" height="140" viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="kawaiiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ff9a9e;stop-opacity:1" />
-      <stop offset="99%" style="stop-color:#fecfef;stop-opacity:1" />
-    </linearGradient>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#ffb6c1" flood-opacity="0.5"/>
-    </filter>
-  </defs>
-  <rect width="100%" height="100%" rx="24" fill="url(#kawaiiGrad)" filter="url(#shadow)"/>
-  <text x="50%" y="55" font-family="'Comic Sans MS', 'Chalkboard SE', 'Fredoka', cursive, sans-serif" font-size="38" font-weight="bold" fill="#ffffff" text-anchor="middle">
-    ✿ soyabean ✿
-  </text>
-  <text x="50%" y="95" font-family="'Comic Sans MS', 'Chalkboard SE', sans-serif" font-size="16" fill="#fff5f8" text-anchor="middle">
-    ( ≖‿≖) a minimal, ultra-cute terminal &amp; GUI code IDE in Rust!
-  </text>
-</svg>
+# · · · soyabean · · ·
 
-<br><br>
+![soyabean logo](logo.png)
 
-<!-- Kawaii Styled SVG Badges -->
-<a href="https://github.com/zenformality/soyabean/releases/latest">
-  <svg width="110" height="30" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100%" height="100%" rx="15" fill="#ff75a0"/>
-    <text x="50%" y="20" font-family="sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">(◕‿◕) v1.0.1</text>
-  </svg>
-</a>
-<svg width="120" height="30" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" rx="15" fill="#b5b2ff"/>
-  <text x="50%" y="20" font-family="sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">( ≖‿≖) MIT License</text>
-</svg>
-<svg width="90" height="30" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" rx="15" fill="#ffb3c6"/>
-  <text x="50%" y="20" font-family="sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">( ◕‿◕) Rust</text>
-</svg>
-<svg width="170" height="30" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100%" height="100%" rx="15" fill="#a8e6cf"/>
-  <text x="50%" y="20" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2d5a44" text-anchor="middle">(๑❛ᴗ❛๑) Win · Linux · macOS</text>
-</svg>
+*( ≖‿≖)* a minimal yet powerful **terminal code IDE** with integrated GUI, written in Rust!
+
+<br>
+
+<div style="display: inline-block; background: #2ea44f; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+(◕‿◕) v1.0.1
+</div>
+
+<div style="display: inline-block; background: #555; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+( ≖‿≖) MIT License
+</div>
+
+<div style="display: inline-block; background: #555; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+( ◕‿◕) Rust
+</div>
+
+<div style="display: inline-block; background: #ccc; color: #333; padding: 6px 14px; border-radius: 20px; font-size: 14px; margin: 3px; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">
+(๑❛ᴗ❛๑) Win · Linux · macOS
+</div>
 
 </div>
 
-<br>
-
-<!-- Kawaii Divider -->
-<svg width="100%" height="20" xmlns="http://www.w3.org/2000/svg">
-  <path d="M 0 10 Q 20 0, 40 10 T 80 10 T 120 10 T 160 10 T 200 10 T 240 10 T 280 10 T 320 10 T 360 10 T 400 10 T 440 10 T 480 10 T 520 10 T 560 10 T 600 10 T 640 10 T 680 10 T 720 10 T 760 10 T 800 10" fill="none" stroke="#ffb6c1" stroke-width="3"/>
-</svg>
+---
 
 <br>
 
-## 🌸 Quick Start ٩(◕‿◕｡)۶
+<div align="center">
+(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧ ✧･ﾟ: *✧･ﾟ
+</div>
 
-### Installation
+## ☆.。.:*・°☆.。.:*・° Quick Start °・.。.:*☆.。.:*・°
+
+### Installation ٩(◕‿◕｡)۶
 
 | Platform | Method |
 |----------|--------|
@@ -72,3 +53,149 @@ soyabean [FILE...]
 
 # GUI version (modern IDE with file tree, terminal, themes)
 soyabean_gui [FILE...]
+```
+
+---
+
+## ✧･ﾟ: *✧･ﾟ Features ✧･ﾟ: *✧･ﾟ
+
+### Modern GUI `soyabean_gui` (◕‿◕✿)
+- **VS Code-style file explorer** with drag & drop, context menus (New File/Folder, Rename, Delete, Reveal)
+- **Integrated terminal** (PowerShell on Windows) with OSC 7 cwd tracking and command history
+- **Tabbed editing** with file-type icons, current-line highlight, configurable cursor blink
+- **Themes**: Zed Dark / Light / Tokyo Night — switch via Command Palette (`Ctrl+Shift+P`)
+- **Command palette** for fuzzy command search
+- **Breadcrumbs** navigation bar
+- **Status bar** with mode, encoding, cursor position, git branch
+
+### Core Editing (TUI + GUI) ( ≖‿≖)
+- **Syntax highlighting** for 30+ languages (Rust, C/C++, Python, JS/TS, Go, Java, JSON, TOML, YAML, HTML, CSS, Shell, etc.) with multi-line block comments
+- **Fuzzy file finder** (`Ctrl+P`) with smart scoring (filename + word-boundary bonuses)
+- **Multiple buffers** with instant switching (`Alt+Left/Right`, `Alt+1..9`)
+- **Incremental search** (`Ctrl+F`) with smart case, wrap-around, live matching; `F3`/`Shift+F3` repeat
+- **Undo / Redo** with keystroke coalescing (`Ctrl+Z` / `Ctrl+Y`)
+- **Selections**: mouse drag, `Shift`+movement; copy/cut/paste with system clipboard mirroring
+- **Smart editing**: auto-indent on Enter, extra indent after `{ ( [ :`, tab-aware Backspace, block indent/dedent, duplicate/move/delete line, word selection
+
+### Mouse & Unicode (◕‿◕✿)
+- Click to place cursor, drag to select, wheel to scroll
+- Unicode-aware (wide chars, tabs), CRLF/LF detection + preservation
+- Line numbers, current-line highlight, smart Home key
+
+### File & Media ٩(๑❛ᴗ❛๑)۶
+- **Image preview** (PNG/JPG/GIF/BMP/WebP/ICO/TIFF) scaled to fit
+- **Audio playback** (MP3/WAV/OGG/FLAC/M4A) with play/pause/stop and volume
+- **Drag & drop** in file tree to move files/folders
+
+### Integrated Terminal (GUI) (ﾉ◕ヮ◕)ﾉ
+- PowerShell (Windows) / `$SHELL` (Linux/macOS)
+- OSC 7 cwd tracking — terminal updates sidebar on `cd`
+- Command bar with cwd display, history (Up/Down), Enter/Run to execute
+- `Ctrl+` toggles terminal drawer
+
+---
+
+## .。.:*・°☆.。.:*・° Keybindings ☆.。.:*・°☆.。.:*・°
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+P` / `Ctrl+O` | Fuzzy open file |
+| `Ctrl+S` | Save (prompts if untitled) |
+| `Ctrl+N` / `Ctrl+W` | New / Close buffer |
+| `Ctrl+F` | Find |
+| `F3` / `Shift+F3` | Find next / previous |
+| `Ctrl+G` | Go to line |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo |
+| `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | Copy / Cut / Paste (whole line if no selection) |
+| `Ctrl+D` | Select word / Duplicate line |
+| `Ctrl+K` | Delete line |
+| `Alt+Up/Down` | Move line up / down |
+| `Alt+Left/Right` | Switch buffer |
+| `Alt+1..9` | Jump to buffer N |
+| `Ctrl+Shift+P` | Command Palette |
+| `Ctrl+\`` | Toggle terminal |
+| `Ctrl+Q` | Quit (twice to discard unsaved) |
+| `F1` | Show full shortcuts list |
+
+---
+
+## (◕‿◕✿) Downloads (◕‿◕✿)
+
+Latest release: **[v1.0.1](https://github.com/zenformality/soyabean/releases/tag/v1.0.1)**
+
+| Platform | Artifact | SHA256 |
+|----------|----------|--------|
+| Windows (installer) | `soyabean-1.0.1-x86_64-setup.exe` | `*.sha256` |
+| Windows (portable) | `soyabean-1.0.1-x86_64.zip` | `*.sha256` |
+| Linux (AppImage) | `soyabean-1.0.1-x86_64.AppImage` | `*.sha256` |
+| Linux (tarball) | `soyabean-1.0.1-x86_64.tar.xz` | `*.sha256` |
+| Source | `source.tar.gz` | `*.sha256` |
+
+All artifacts include `sha256.sum` for verification. ٩(◕‿◕｡)۶
+
+---
+
+## °˖✧ Build from Source ˖°✧
+
+```bash
+# Prerequisites: Rust 1.97+, Git
+git clone https://github.com/zenformality/soyabean
+cd soyabean
+
+# TUI only (minimal deps)
+cargo build --release --bin soyabean
+
+# GUI (needs ALSA on Linux: sudo apt install libasound2-dev)
+cargo build --release --bin soyabean_gui
+```
+
+Binaries land in `target/release/`. (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧
+
+---
+
+## ˗ˏˋ ♡ ˎˊ˗ Architecture ˗ˏˋ ♡ ˎˊ˗
+
+~2,500 lines across modules:
+
+| Module | Role |
+|--------|------|
+| `buffer.rs` | Text buffer, cursor, selection, undo/redo, search |
+| `syntax.rs` | Table-driven per-line tokenizer with block-comment carry-over |
+| `finder.rs` | Workspace scan + fuzzy subsequence scoring |
+| `draw.rs` | Diff-free frame renderer with 24-bit colors |
+| `editor.rs` | Modes, keymap, event loop |
+| `media_view.rs` | Image preview + audio player (rodio) |
+| `file_tree.rs` | Modern file explorer with drag & drop |
+| `term.rs` | Embedded PTY terminal with ANSI parser |
+| `editor_view.rs` | Syntax-highlighted editor pane |
+| `soyabean_gui.rs` | Main GUI application |
+
+**Dependencies**: `crossterm`, `eframe/egui`, `image`, `portable-pty`, `rodio`, `unicode-width`
+
+---
+
+## License (◕‿◕✿)
+
+MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+## Credits (◕‿◕✿)
+
+Made with (◕‿◕✿) by **[zenformality](https://github.com/zenformality)**
+
+<img src="https://github.com/zenformality.png" width="80" alt="zenformality">
+
+---
+
+<div align="center">
+<sub>Built with Rust · Powered by egui</sub>
+</div>
+
+<div align="center">
+<br>
+( ≖‿≖) ✧ thank you for stopping by! ✧ ( ◕‿◕)
+<br>
+<br>
+</div>
+
