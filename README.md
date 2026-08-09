@@ -9,7 +9,7 @@ A minimal yet powerful **terminal code IDE** with integrated GUI, written in Rus
 [![GitHub release](https://img.shields.io/github/v/release/zenformality/soyabean?style=for-the-badge&label=version&color=2ea44f)](https://github.com/zenformality/soyabean/releases/latest)
 [![GitHub License](https://img.shields.io/github/license/zenformality/soyabean?style=for-the-badge&color=555)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/zenformality/soyabean/release.yml?style=for-the-badge&label=build)](https://github.com/zenformality/soyabean/actions/workflows/release.yml)
-<img src="https://githubusercontent.com" width="80" alt="Ferris the Rust Mascot">
+![Rust](https://shields.io)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](#downloads)
 [![Lines of Code](https://img.shields.io/tokei/lines/github/zenformality/soyabean?style=for-the-badge&color=informational)](src)
 
